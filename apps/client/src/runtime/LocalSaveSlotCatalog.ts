@@ -59,9 +59,6 @@ export class LocalSaveSlotCatalog {
       return false;
     }
 
-    // Free space from copies that are already safely represented by validated
-    // account-scoped targets before attempting any remaining migration writes.
-    // This is essential when LocalStorage is already close to or at quota.
     this.cleanupMigratedSources();
 
     let migrated = false;
@@ -85,11 +82,64 @@ export class LocalSaveSlotCatalog {
       this.markerStore?.setItem(accountMigrationMarker, "done");
     }
 
-    // Run cleanup again for copies created by this migration pass. A source is
-    // removed only after the account target is readable, checksum-valid and at
-    // least as recent as the source it replaces.
     this.cleanupMigratedSources();
     return migrated;
+  }
+
+  /**
+   * Returns the previous account id only when this browser explicitly claimed
+   * local slots for it, the current account is empty, and at least one validated
+   * save still exists for that previous account.
+   */
+  public getRecoverablePreviousAccountId(): string | undefined {
+    const claimedBy = this.markerStore?.getItem(ACCOUNT_SLOT_CLAIM_MARKER) ?? undefined;
+    if (claimedBy === undefined || claimedBy === this.accountId) return undefined;
+    if (this.listSlots().some((slot) => slot.hasSave)) return undefined;
+
+    const hasRecoverableSave = PLAYER_SAVE_SLOT_IDS.some((slotId) => {
+      const previousSlotId = getAccountSaveSlotId(claimedBy, slotId);
+      return this.getValidSave(previousSlotId) !== undefined
+        || this.getValidSave(getSaveBackupSlotId(previousSlotId)) !== undefined;
+    });
+
+    return hasRecoverableSave ? claimedBy : undefined;
+  }
+
+  /**
+   * Copies validated saves from the browser's previously claimed account into
+   * the currently authenticated empty account. Previous copies are retained as
+   * a rollback safety net until a later cleanup pass can prove cloud durability.
+   */
+  public recoverPreviousAccountSaves(previousAccountId: string): boolean {
+    const claimedBy = this.markerStore?.getItem(ACCOUNT_SLOT_CLAIM_MARKER);
+    if (claimedBy !== previousAccountId || previousAccountId === this.accountId) return false;
+    if (this.listSlots().some((slot) => slot.hasSave)) return false;
+
+    let recovered = false;
+    for (const logicalSlotId of PLAYER_SAVE_SLOT_IDS) {
+      const previousSlotId = getAccountSaveSlotId(previousAccountId, logicalSlotId);
+      const currentSlotId = getAccountSaveSlotId(this.accountId, logicalSlotId);
+      const previousBackupId = getSaveBackupSlotId(previousSlotId);
+      const currentBackupId = getSaveBackupSlotId(currentSlotId);
+
+      const primary = this.getValidSave(previousSlotId);
+      if (primary !== undefined && !this.repository.has(currentSlotId)) {
+        this.repository.save(currentSlotId, primary);
+        recovered = true;
+      }
+
+      const backup = this.getValidSave(previousBackupId);
+      if (backup !== undefined && !this.repository.has(currentBackupId)) {
+        this.repository.save(currentBackupId, backup);
+        recovered = true;
+      }
+    }
+
+    if (recovered) {
+      this.markerStore?.setItem(ACCOUNT_SLOT_CLAIM_MARKER, this.accountId);
+      this.markerStore?.setItem(`${ACCOUNT_MIGRATION_MARKER_PREFIX}${this.accountId}`, "done");
+    }
+    return recovered;
   }
 
   private migrateLegacySaveToFirstUnscopedSlot(): boolean {
@@ -146,7 +196,7 @@ export class LocalSaveSlotCatalog {
       return save;
     } catch (error) {
       console.error(
-        `[Persistence] Refusing to cleanup migration source because '${slotId}' is not a valid save:`,
+        `[Persistence] Refusing to migrate invalid save '${slotId}':`,
         error,
       );
       return undefined;
