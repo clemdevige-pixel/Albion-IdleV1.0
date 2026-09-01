@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { BLACK_MARKET_ROUTES, RESEARCH_IDS } from "@game/data";
-import type { BlackMarketSnapshot } from "@game/gameplay";
+import type { BlackMarketConvoy, BlackMarketSnapshot } from "@game/gameplay";
 import { blackMarketRuntime } from "../../../runtime/BlackMarketRuntime.js";
 import { useGameServices } from "../../../state/GameContext.js";
 import { syncInventoryToBridge } from "../../../state/bridge-sync/playerInventorySync.js";
@@ -12,6 +12,11 @@ import { useMerchantData } from "../../merchant/useMerchantData.js";
 import { DashboardCard } from "./DashboardCard";
 import "./DashboardBlackMarketConvoyCard.css";
 
+export interface DashboardBlackMarketConvoyModel {
+  readonly convoy: BlackMarketConvoy;
+  readonly nowMs: number;
+}
+
 function formatRemainingDuration(durationMs: number): string {
   const totalSeconds = Math.max(0, Math.ceil(durationMs / 1000));
   const hours = Math.floor(totalSeconds / 3600);
@@ -21,9 +26,8 @@ function formatRemainingDuration(durationMs: number): string {
   return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
 
-export function DashboardBlackMarketConvoyCard(): JSX.Element | null {
+export function useDashboardBlackMarketConvoy(): DashboardBlackMarketConvoyModel | null {
   const services = useGameServices();
-  const navigation = useNavigation();
   const { wallet } = useMerchantData();
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [snapshot, setSnapshot] = useState<BlackMarketSnapshot | null>(null);
@@ -81,8 +85,16 @@ export function DashboardBlackMarketConvoyCard(): JSX.Element | null {
   }, [blackMarketUnlocked, getUnlockedTiers, onMutation]);
 
   const convoy = snapshot?.activeConvoy;
-  if (convoy === null || convoy === undefined) return null;
+  return convoy === null || convoy === undefined ? null : { convoy, nowMs };
+}
 
+export function DashboardBlackMarketConvoyCard({
+  model,
+}: {
+  readonly model: DashboardBlackMarketConvoyModel;
+}): JSX.Element {
+  const navigation = useNavigation();
+  const { convoy, nowMs } = model;
   const route = BLACK_MARKET_ROUTES.find((entry) => entry.id === convoy.routeId);
   const durationMs = Math.max(1, convoy.completesAt - convoy.departedAt);
   const progress = Math.max(0, Math.min(100, ((nowMs - convoy.departedAt) / durationMs) * 100));
