@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import {
   getIslandBuildingDefinition,
   getIslandLevelDefinition,
@@ -36,6 +36,7 @@ export function IslandModule(): JSX.Element {
   const bridge = useGameBridge();
   const { island } = bridge;
   const { activeView } = useNavigation();
+  const handledViewRef = useRef<string | null>(null);
   const { getIslandLevel } = useGameServices();
   const islandLevel = getIslandLevel();
   const islandLevelDefinition = getIslandLevelDefinition(islandLevel);
@@ -65,6 +66,9 @@ export function IslandModule(): JSX.Element {
     : getIslandBuildingDefinition(selectedBuilding.definitionId);
 
   useEffect(() => {
+    if (activeView === null || handledViewRef.current === activeView) return;
+    handledViewRef.current = activeView;
+
     let target = activeView === "academy_expeditions"
       ? island.buildings.find((building) => building.definitionId === "academy")
       : activeView === "worker_house"
@@ -79,9 +83,10 @@ export function IslandModule(): JSX.Element {
       const worker = bridge.workers.workers.find((candidate) => (
         candidate.state === "idle" || candidate.state === "paused"
       ));
-      if (worker !== undefined) {
-        target = findWorkerGatheringBuilding(island.buildings, worker.profession);
-      }
+      target = worker === undefined
+        ? undefined
+        : findWorkerGatheringBuilding(island.buildings, worker.profession);
+      target ??= island.buildings.find((building) => building.definitionId === "worker_house");
     }
 
     if (target === undefined || selectedBuildingInstanceId === target.instanceId) return;
