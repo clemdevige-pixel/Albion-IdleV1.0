@@ -11,6 +11,12 @@ import type {
   AcademyResearchEntryModel,
 } from "../../runtime/bootstrap/createAcademyPresentationFoundation";
 import { useGameBridge, useGameServices } from "../../state/GameContext";
+import { FeatureAttentionBadge } from "../attention/FeatureAttentionBadge";
+import {
+  FEATURE_UNLOCK_VISITS,
+  useFeatureUnlockPending,
+  useFeatureUnlockVisit,
+} from "../attention/usePlayerAttention";
 import { ContextHoverTooltip } from "../shared/ContextHoverTooltip";
 import "./academy.css";
 
@@ -261,7 +267,13 @@ function ActiveExpeditionRow({
   );
 }
 
-export function AcademyPanel({ level }: { readonly level: number }): JSX.Element {
+export function AcademyPanel({
+  level,
+  initialView,
+}: {
+  readonly level: number;
+  readonly initialView?: AcademyView;
+}): JSX.Element {
   useGameBridge();
   const {
     getAcademyModel,
@@ -269,11 +281,20 @@ export function AcademyPanel({ level }: { readonly level: number }): JSX.Element
     startAcademyExpedition,
   } = useGameServices();
   const [feedback, setFeedback] = useState<string | null>(null);
-  const [view, setView] = useState<AcademyView>("research");
+  const [view, setView] = useState<AcademyView>(initialView ?? "research");
   const [showResearchHistory, setShowResearchHistory] = useState(false);
   const [requestedExpeditionTier, setRequestedExpeditionTier] = useState<number | undefined>();
   const [requestedExpeditionId, setRequestedExpeditionId] = useState<string | undefined>();
   const [requestedDuration, setRequestedDuration] = useState<ExpeditionDurationMs | undefined>();
+  const expeditionUnlockCount = useFeatureUnlockPending(FEATURE_UNLOCK_VISITS.expeditions);
+
+  useFeatureUnlockVisit(
+    view === "expeditions" ? FEATURE_UNLOCK_VISITS.expeditions : [],
+  );
+
+  useEffect(() => {
+    if (initialView !== undefined) setView(initialView);
+  }, [initialView]);
 
   useEffect(() => {
     if (feedback === null) return;
@@ -338,6 +359,7 @@ export function AcademyPanel({ level }: { readonly level: number }): JSX.Element
         </button>
         <button type="button" className={view === "expeditions" ? "is-active" : ""} onClick={() => { setView("expeditions"); }}>
           Expéditions
+          <FeatureAttentionBadge count={expeditionUnlockCount} />
         </button>
       </nav>
 
