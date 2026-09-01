@@ -1,5 +1,6 @@
 import { getTowerFloorDefinition, type TowerProgressionService } from "@game/gameplay";
 import type { FactionCombatContext } from "../data/factionCombatResolver.js";
+import { activityFailureFlow } from "./ActivityFailureFlow.js";
 import {
   CONTINUOUS_COMBAT_FLOW_POLICY,
   type CombatFlowPolicy,
@@ -91,7 +92,16 @@ export class TowerCombatRuntimeRouter {
       fallback();
       return;
     }
+    const snapshot = this.progression.getSnapshot();
+    const failedFloor = getTowerFloorDefinition(snapshot.currentFloor, snapshot.seed);
     this.progression.failCurrentFloor();
     this.active = false;
+    activityFailureFlow.showTower({
+      floor: failedFloor.floor,
+      tier: failedFloor.block.tier,
+      factionId: failedFloor.block.factionId,
+      highestClearedFloor: snapshot.highestClearedFloor,
+      checkpointFloor: snapshot.checkpointFloor,
+    });
   }
 }
