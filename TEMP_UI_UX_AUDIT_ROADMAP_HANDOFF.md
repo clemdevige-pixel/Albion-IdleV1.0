@@ -5,23 +5,24 @@ Branch: `agent/albion-idle-development`
 Original roadmap baseline: `ff29672dee559107071f36389409296baf385555`
 Implementation baseline after validated P1.2: `20322a9740134d6c243f782c55ba1c25af5a36a4`
 Latest validated Combat HUD implementation: `b98876081473420431b6a9804a9d1772f4e8c38d`
-Status: **P0.1 + P0.2 + P1.1 + P1.2 + P1.3 VALIDATED**
+Latest validated roadmap implementation before closure doc: `24e7d1a37c58243abdf2b5be4d12a88d906a5b3f`
+Status: **P0.1 -> P3.2 VALIDATED / GLOBAL UI-UX PASS CLOSED**
 
 ---
 
 ## 1. Purpose
 
-This document is the authoritative handoff for the current UI/UX audit roadmap.
+This document is the authoritative handoff for the completed global UI/UX audit roadmap.
 
-It is not a redesign brief. The current global shell remains structurally sound and must be preserved unless a later audit proves otherwise.
+It is not a redesign brief. The current global shell remains structurally sound and was intentionally preserved throughout the roadmap.
 
-Objective: improve clarity, player guidance, consistency and moment-to-moment usability without introducing a parallel UI architecture.
+Objective achieved: improve clarity, player guidance, consistency and moment-to-moment usability without introducing a parallel UI architecture.
 
-Status legend used below:
+Status legend:
 
 - **TRAITÉ + IMPLÉMENTÉ** = point audité, changement validé et présent sur la branche active.
 - **AUDITÉ / AUCUN CHANGEMENT** = point explicitement revu, mais aucun changement n’a été retenu.
-- **À FAIRE** = point non encore traité dans la roadmap active.
+- **NON PLANIFIÉ / NON RECOMMANDÉ** = ne pas lancer sans nouvel élément démontrant un besoin systémique.
 
 ---
 
@@ -58,198 +59,160 @@ Do not introduce a global sidebar, fullscreen module pages, excessive floating w
 
 # 3. COMPLETED + VALIDATED
 
-## P0.1 — Global Attention System — DONE
+## P0.1 — Global Attention System
 
 Status: **TRAITÉ + IMPLÉMENTÉ**
 
-A shared/data-driven attention layer now drives Dashboard/navigation attention instead of independent module-specific detection.
+Shared/data-driven attention layer drives Dashboard/navigation attention instead of independent module-specific detection.
 
-Validated behavior includes:
-
-- inventory capacity warnings;
-- worker idle/paused attention;
-- persistent `no expedition active` attention once expeditions are available;
-- enchantment-ready attention with per-item dismissal behavior;
-- one-shot feature unlock attention derived from real research unlocks;
-- parent-module badge + local sub-feature badge for relevant unlocks;
-- feature acknowledgement only when the actual destination is visited where possible;
-- yield-tracking unlock acknowledged on first real favorite/unfavorite action, not on opening the screen;
-- acknowledgements persisted through the existing Dashboard UI save provider rather than a parallel local-storage system.
-
-Major unlock destinations covered include:
-
-- Expeditions / faction expeditions / second expedition slot;
-- Enchantment;
-- Black Market;
-- resource yield tracking;
-- advanced Bank management;
-- worker organization;
-- instant refining;
-- Dungeons + faction rune world drop;
-- Tower.
+Validated coverage includes inventory capacity warnings, worker idle/paused attention, persistent no-expedition attention, enchantment-ready attention with dismissal, real research unlock attention, parent/local badges, destination-aware acknowledgement and persistence through the existing Dashboard UI save provider.
 
 Do not regress this into independent per-screen badge logic.
 
 ---
 
-## P0.2 — Interaction Contract — DONE
+## P0.2 — Interaction Contract
 
 Status: **TRAITÉ + IMPLÉMENTÉ**
 
 Validated interaction grammar:
 
-- click -> select / inspect;
+- click -> select / inspect where relevant;
 - double-click -> primary/default action where relevant;
 - right-click -> contextual actions;
 - drag & drop -> move / organize where spatial movement exists;
 - hover -> information.
 
-Important validated cases:
-
-- Inventory / Bank item movement and contextual actions;
-- Character equipped-item right-click -> unequip action;
-- Character equipment picker closes with Escape and outside click;
-- Merchant / Masteries / Island / World audited and not forced into artificial right-click/double-click behavior when it adds no value.
+Inventory, Bank, Character, Merchant, Masteries, Island and World were audited against this contract. Artificial interactions were explicitly avoided when they added no value.
 
 ---
 
-## P1.1 — Dashboard cockpit — DONE
+## P1.1 — Dashboard cockpit
 
 Status: **TRAITÉ + IMPLÉMENTÉ**
 
-The existing modular/reorderable Dashboard architecture was preserved.
+Existing modular/reorderable Dashboard architecture preserved.
 
-Current hierarchy:
+Validated hierarchy:
 
-1. **Priorités**
-2. **Activité en cours**
-3. **Rendement & suivi**
+1. Priorités
+2. Activité en cours
+3. Rendement & suivi
 
-Validated details:
-
-- `Priorités` consumes the shared attention source;
-- direct CTA/deep-links open the real destination where supported;
-- Expedition idle -> `Île > Académie > Expéditions`;
-- worker attention -> relevant gathering building, with Worker House fallback;
-- Enchantment / Black Market / Bank / Resources / Dungeons / Tower deep-links supported;
-- Black Market cargo transit is shown in **Activité en cours** with progress/ETA and direct CTA;
-- active research/expeditions are separated from unresolved priorities;
-- Production belongs to **Rendement & suivi**;
-- Production card displays active workers by resource family: up to 4 resource rows x 2 workers;
-- one worker in a family uses the full row width; two workers use 50/50;
-- all 8 currently supported active workers can be visible simultaneously;
-- non-worker production activities remain separated below when relevant;
-- the attempted extra compaction of Rendement/Production was reverted; the earlier validated spacing remains;
-- saved Dashboard section order remains authoritative within its groups.
+Shared Attention System feeds priorities; deep-links open real destinations; active research/expeditions remain separated from unresolved priorities; Production remains in Rendement & suivi; worker rows support the validated current capacity without hiding active workers.
 
 ---
 
-## P1.2 — Internal module hierarchy — DONE
+## P1.2 — Internal module hierarchy
 
 Status: **TRAITÉ + IMPLÉMENTÉ**
 
 No global `ModuleLayout` wrapper was introduced because the existing architecture was already sufficiently coherent.
 
-Validated targeted fixes:
-
-- Character: redundant `Équipement` internal heading removed;
-- Merchant: tab semantics normalized (`tablist` / `tab` / selected state);
-- World: same semantic tab normalization;
-- Masteries: real 3-category grid corrected from 2 columns to 3;
-- Island overview: redundant `Île du joueur` pre-title removed; summary starts directly with level/status;
-- Academy: main tabs visually aligned with other modules; hover/focus/disabled/empty states normalized;
-- Worker House / Refining / Crafting audited and intentionally left structurally unchanged because their hierarchy/disabled states were already coherent.
+Targeted fixes included Character heading cleanup, Merchant/World tab semantics, Masteries category grid correction, Island overview cleanup and Academy tab/state normalization.
 
 Principle confirmed: standardize shared grammar, not every screen's shape.
 
 ---
 
-## P1.3 — Dedicated Combat HUD readability — DONE
+## P1.3 — Dedicated Combat HUD readability
 
-Status global: **TRAITÉ + IMPLÉMENTÉ / AUDITÉ selon les points ci-dessous**
+Status: **TRAITÉ + IMPLÉMENTÉ / AUDITÉ selon sous-points**
 
-Audit performed against the live branch and in-game screenshots. The Combat HUD architecture was preserved: Phaser remains authoritative for in-world combat presentation; React remains an overlay for contextual HUD/UI.
+Combat HUD architecture preserved: Phaser remains authoritative for in-world combat presentation; React remains overlay/contextual UI.
 
-### P1.3.1 — Ability Bar
+Validated changes:
 
-Status: **AUDITÉ / AUCUN CHANGEMENT**
+- hero/enemy HP readability reinforced;
+- Elite/Boss distinction rendered inline with enemy name.
 
-Validated existing structure:
+Audited and intentionally unchanged:
 
-- 3 active abilities;
-- healing potion;
-- cooldown overlay + numeric cooldown;
-- locked states;
-- keyboard shortcuts;
-- auto-cast control;
-- data-driven ability content/tooltips.
+- ability bar;
+- segment/encounter progression;
+- buffs/debuffs/status effects;
+- defeat state;
+- Activity Journal;
+- victory feedback.
 
-No structural rework retained.
+Combat HUD is closed for this roadmap pass.
 
-### P1.3.2 — Segment / encounter progression
+---
 
-Status: **AUDITÉ / AUCUN CHANGEMENT**
-
-The existing top timeline + Dashboard Combat card already provide complementary information without needing another permanent HUD layer.
-
-No duplicate `segment / encounter / progression-farm` readout was added in-world.
-
-### P1.3.3 — Hero / Enemy HP readability
+## P2.1 — Inventory / Bank / Equipment targeted polish
 
 Status: **TRAITÉ + IMPLÉMENTÉ**
 
-Targeted visual pass only:
+Validated implementation:
 
-- health bar slightly thickened;
-- stronger border contrast;
-- HP value readability slightly reinforced;
-- actor label readability slightly reinforced.
+- Inventory / Bank categorization centralized through one shared UI resolver derived from existing catalogs;
+- near-full / full capacity feedback added without new runtime state, using the existing capacity contract;
+- `ItemGrid` accessibility guidance now reflects actual context actions;
+- no simple-click selection layer;
+- no additional empty-state treatment;
+- no search or advanced Tier/Quality/Enchantment filters added.
 
-The existing `world_hud` render manifest remains the source of truth; no parallel React health-bar system was created.
+---
 
-### P1.3.4 — Elite / Boss distinction
+## P2.2 — Tooltip final polish
 
 Status: **TRAITÉ + IMPLÉMENTÉ**
 
-Initial attempt with a separate floating line above HP was rejected after in-game review because it crowded the HP block.
+Validated implementation:
 
-Final validated implementation:
+- centralized hover-intent delay around 120 ms for item hover tooltips;
+- pending tooltip cancelled immediately on leave/right-click;
+- technical `IP/2M` wording replaced by player-facing language without changing calculations;
+- Character Item Power receives a short explanatory tooltip via the existing shared tooltip component;
+- no tooltip proliferation on obvious stats.
 
-- `ELITE` / `BOSS` rendered inline to the right of the enemy name;
-- positioning is owned by the Phaser World HUD and uses the actual rendered enemy-name width;
-- no badge on normal encounters;
-- no vertical space is inserted between enemy name and HP value/bar;
-- badge follows the actually presented encounter, including enemy-presentation transitions.
+Disabled-action handling and cross-module tooltip consistency were audited; no larger system rewrite was justified.
 
-This final form was explicitly validated.
+---
 
-### P1.3.5 — Buffs / debuffs / status effects
+## P2.3 — Navigation as state map
 
-Status: **AUDITÉ / AUCUN CHANGEMENT**
+Status: **TRAITÉ + IMPLÉMENTÉ**
 
-Current actor-anchored status-effect system is retained. It already follows Phaser HUD anchors and authoritative combat effects.
+Validated implementation:
 
-### P1.3.6 — Defeat state
+- Merchant meaningful sub-views synchronize `activeView` (`buy`, `repair`, `enchant`, `black_market`);
+- Inventory meaningful sub-views synchronize `activeView` (`bank`, resource deep-link cleanup, inventory root);
+- micro-states such as filters, bank tab selection or selected item remain local and are not promoted into navigation state;
+- no new router, breadcrumb or navigation system introduced.
 
-Status: **AUDITÉ / AUCUN CHANGEMENT**
+Result: deep-links remain replayable and navigation state matches the actually displayed meaningful sub-view.
 
-Current explicit recovery action (`Reprendre l’exploration`) remains valid.
+---
 
-### P1.3.7 — Activity Journal
+## P3.1 — Masteries / Production cognitive-density
 
-Status: **AUDITÉ / AUCUN CHANGEMENT**
+Status: **TRAITÉ + IMPLÉMENTÉ**
 
-After in-game review, the journal was judged sufficiently compact and non-obstructive. No collapsing/repositioning was retained.
+Validated final implementation:
 
-### P1.3.8 — Victory feedback
+- child weapon masteries keep name, level and XP progression visible;
+- a single `i` control opens all secondary detail for weapon specializations: bonuses + abilities/details;
+- gathering child masteries follow the same single-`i` pattern for secondary detail;
+- low-value mastery detail such as `1 ressource par cycle` and worker cycle-time presentation was removed from the Masteries detail surface;
+- gathering progression detail now exposes the next resource unlock / Tier / required mastery level derived from `GATHERING_MASTERY_UNLOCK_BY_TIER` and the existing production catalog;
+- Crafting was audited and intentionally left unchanged.
 
-Status: **AUDITÉ / AUCUN CHANGEMENT**
+Do not reintroduce separate `Bonus` and `i` controls for the same mastery row.
 
-The current `VICTOIRE` feedback was explicitly judged non-problematic and remains unchanged.
+---
 
-### P1.3 conclusion
+## P3.2 — PC smaller-resolution / responsive pass
 
-Combat HUD is considered **closed for this roadmap pass**. No large redesign is justified by the current in-game result.
+Status: **TRAITÉ + IMPLÉMENTÉ**
+
+Validated implementation:
+
+- Bottom Navigation can scroll horizontally below 1100 px only when required, preventing clipped/inaccessible modules;
+- Character gains an additional narrow-PC breakpoint around 920 px with smaller slots/gaps while preserving left / hero / right structure;
+- Gathering narrows fixed cycle / active-strike columns at the same narrow-PC breakpoint;
+- Inventory/Bank, Merchant and Masteries existing responsive behavior was audited and retained;
+- no mobile-first redesign or global font scaling introduced.
 
 ---
 
@@ -257,26 +220,17 @@ Combat HUD is considered **closed for this roadmap pass**. No large redesign is 
 
 ## Inventory / Bank / Equipment
 
-Status: **TRAITÉ + IMPLÉMENTÉ** for the items listed below.
-
-- Bank tabs are ranges of one shared Bank inventory, not separate storage owners.
-- Drag item onto Bank tab -> move to first compatible destination.
-- Right-click can move Bank items between tabs.
-- Inventory right-click can move items directly to a Bank tab.
-- Storage destination logic remains centralized in runtime.
-- Compatible stack merge is considered before empty slots.
+- Bank tabs remain ranges of one shared Bank inventory, not separate storage owners.
+- Drag/right-click storage movements remain on centralized runtime destination logic.
+- Compatible stack merge remains considered before empty slots.
 - Equipment/Bank/Inventory stay on the existing storage architecture.
 
 ## Relic handling
-
-Status: **TRAITÉ + IMPLÉMENTÉ**
 
 - Sanctuary/dungeon relic is consumed when the corresponding analysis research starts.
 - Legacy saves with research already active/completed reconcile the orphaned physical relic.
 
 ## Enchantment item language
-
-Status: **TRAITÉ + IMPLÉMENTÉ**
 
 Color contract:
 
@@ -294,89 +248,45 @@ Placement:
 
 ## Tooltips
 
-Status: **TRAITÉ + IMPLÉMENTÉ** for current placement/right-click behavior; final polish remains in P2.2.
-
 - Shared tooltip content remains authoritative.
-- Right-click suppresses the hover tooltip while contextual menu is open.
-- Tooltip placement is adaptive and attempts not to cover the hovered item/inventory/equipment picker when another valid placement exists.
+- Right-click suppresses hover tooltip while contextual menu is open.
+- Tooltip placement remains adaptive and attempts not to cover the hovered item/inventory/equipment picker when another valid placement exists.
 
 ---
 
-# 5. REMAINING ROADMAP
+# 5. FINAL CROSS-ROADMAP AUDIT
 
-## P2.1 — Inventory / Bank / Equipment targeted polish
+Status: **AUDITÉ / AUCUN CHANGEMENT SUPPLÉMENTAIRE RETENU**
 
-Status: **À FAIRE**
+A final transversal review was performed after P0 -> P3.
 
-Validated implementation scope:
+No new systemic UI/UX issue was identified that justifies another targeted phase or a general redesign.
 
-- centralize Inventory / Bank item categorization through one shared UI resolver derived from existing authoritative catalogs;
-- add local visual feedback for near-full / full Inventory and Bank capacity without creating new runtime state;
-- make `ItemGrid` accessibility guidance reflect the actual interaction contract of each context;
-- no simple-click selection layer (hover tooltip already covers inspection);
-- no additional empty-state treatment;
-- no search / advanced Tier-Quality-Enchantment filters in this pass.
+The final state remains coherent with the validated direction:
 
-## P2.2 — Tooltip system final polish
+- one shell architecture;
+- World-first composition preserved;
+- Right Panel remains contextual;
+- Attention, interaction, tooltip and navigation contracts remain shared rather than duplicated;
+- progressive disclosure is used where density was proven problematic;
+- smaller-PC hardening is targeted rather than mobile-driven;
+- no parallel gameplay/runtime state introduced by UI work.
 
-Status: **À FAIRE**
+Any future UI change should therefore start from a newly observed player problem, screenshot, telemetry issue or explicit gameplay requirement rather than reopening this roadmap by default.
 
-Candidate scope:
+---
 
-- test hover-intent delay around 100–150 ms;
-- audit disabled-action explanations;
-- audit stat explanations;
-- verify consistency across Inventory / Bank / Character / Merchant / Craft / Loot;
-- keep essential information outside tooltip-only presentation.
-
-## P2.3 — Navigation as state map
-
-Status: **À FAIRE**
-
-Attention System already provides the foundation. Audit whether remaining navigation state communication needs polish without adding more primary navigation buttons or noisy counters.
-
-## P3.1 — Masteries / Production cognitive-density pass
-
-Status: **À FAIRE**
-
-Use progressive disclosure. Reduce permanent information density; do not create spreadsheet walls.
-
-## P3.2 — PC smaller-resolution / responsive pass
-
-Status: **À FAIRE**
-
-Audit at least:
-
-- Right Panel width;
-- bottom navigation overflow;
-- Character layout;
-- Inventory/Bank grids;
-- equipment picker;
-- tooltip placement;
-- Combat HUD overlap;
-- header density.
-
-Prefer shared tokens/layout rules over module-specific media-query accumulation.
-
-## P4 — General visual redesign
+# 6. P4 — General visual redesign
 
 Status: **NON PLANIFIÉ / NON RECOMMANDÉ À CE STADE**
 
-Only reopen if later evidence demonstrates a systemic visual/usability failure that the targeted roadmap cannot solve.
+The P0 -> P3 roadmap solved the identified issues without evidence of a systemic shell/design failure.
+
+Do not start P4 unless new evidence demonstrates that targeted fixes can no longer solve the problem.
 
 ---
 
-# 6. EXECUTION ORDER FROM HERE
-
-1. **P2 targeted polish**
-2. **P3 density + smaller-resolution pass**
-3. **P4 only if evidence later justifies it**
-
-Do not start multiple large UI architecture changes in parallel.
-
----
-
-# 7. Process rules for the next agent/chat
+# 7. Process rules for future UI work
 
 Before implementation:
 
@@ -386,15 +296,12 @@ Before implementation:
 4. Reuse existing components/runtime data before creating abstractions.
 5. Keep solutions data-driven where appropriate.
 6. Do not alter gameplay rules under UI work without separate validation.
-7. Per major phase: audit -> proposal -> validation when needed -> implementation -> targeted tests -> lint -> typecheck -> E2E UI review.
+7. For any new significant UI issue: audit -> proposal -> validation -> implementation -> targeted tests -> lint -> typecheck -> in-game review.
 8. Challenge changes that conflict with World First, readability, progressive disclosure or current architecture.
-9. **For every roadmap point, keep an explicit status in this document: `TRAITÉ + IMPLÉMENTÉ`, `AUDITÉ / AUCUN CHANGEMENT`, or `À FAIRE`.**
 
 ---
 
-# 8. Validation status
-
-Roadmap ordering was explicitly validated on 2026-09-01.
+# 8. Validation status / resume point
 
 Validated completed phases:
 
@@ -403,7 +310,13 @@ Validated completed phases:
 - **P1.1 Dashboard cockpit — TRAITÉ + IMPLÉMENTÉ**
 - **P1.2 Internal module hierarchy — TRAITÉ + IMPLÉMENTÉ**
 - **P1.3 Combat HUD readability — TRAITÉ + IMPLÉMENTÉ / AUDITÉ selon les sous-points**
+- **P2.1 Inventory / Bank / Equipment targeted polish — TRAITÉ + IMPLÉMENTÉ**
+- **P2.2 Tooltip final polish — TRAITÉ + IMPLÉMENTÉ**
+- **P2.3 Navigation as state map — TRAITÉ + IMPLÉMENTÉ**
+- **P3.1 Masteries / Production cognitive-density — TRAITÉ + IMPLÉMENTÉ**
+- **P3.2 PC smaller-resolution / responsive — TRAITÉ + IMPLÉMENTÉ**
+- **Final transversal audit — AUDITÉ / AUCUN CHANGEMENT SUPPLÉMENTAIRE RETENU**
 
 Current resume point:
 
-> **P2.1 — Inventory / Bank / Equipment targeted polish**
+> **Global UI/UX roadmap closed. Do not start P4 by default. Resume from a new concrete player/UI problem when one is observed.**
