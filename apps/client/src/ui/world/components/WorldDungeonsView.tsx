@@ -5,6 +5,7 @@ import { getDungeonLootDefinition } from "../../../data/dungeonLootContentCatalo
 import type { DungeonKeyTier } from "../../../data/dungeonKeyContentCatalog.js";
 import type { DungeonAccessState } from "../../../state/DungeonNavigationActions.js";
 import { useGameServices } from "../../../state/GameContext.js";
+import { useNavigation } from "../../navigation/useNavigation.js";
 import { useGameUiSelector } from "../../state/useGameUiSelector.js";
 import "./WorldDungeonsView.css";
 
@@ -95,6 +96,7 @@ function formatRange(range: { readonly min: number; readonly max: number }): str
 
 export function WorldDungeonsView(): JSX.Element {
   const { startDungeon, abandonDungeon, getDungeonState, inventoryManager, heroId } = useGameServices();
+  const navigation = useNavigation();
   const [selectedTier, setSelectedTier] = useState<DungeonKeyTier>(4);
   const [infoDungeonId, setInfoDungeonId] = useState<string | null>(null);
   const selectDungeonPresentation = useCallback((state: GameBridgeState): DungeonPresentationModel => {
@@ -167,8 +169,8 @@ export function WorldDungeonsView(): JSX.Element {
               </div>
               {isActiveDungeon ? <div className="world-dungeon-card__current"><small>Combat actuel · Rencontre {(presentation.activeEncounterIndex ?? 0) + 1}/{dungeon.encounters.length}</small><strong>{presentation.enemyName || "Préparation de la rencontre…"}</strong></div> : isPendingDungeon ? <div className="world-dungeon-card__current is-pending"><small>Entrée en attente</small><strong>Le donjon commencera dès que l’ennemi actuel sera vaincu.</strong></div> : null}
               <footer className="world-dungeon-card__footer">
-                {!isPendingDungeon && <p className={!canEnter ? "is-status" : ""}>{isActiveDungeon ? "Abandonner termine définitivement cette tentative." : lockMessage ?? "En combat, l’entrée attendra la fin de l’ennemi actuel."}</p>}
-                {isActiveDungeon ? <button type="button" className="is-danger" onClick={() => { abandonDungeon(); }}>Abandonner</button> : !isPendingDungeon ? <button type="button" disabled={!canEnter} aria-describedby={lockMessage === undefined ? undefined : tooltipId} onClick={() => { startDungeon(dungeon.id); }}>{getEnterLabel(access)}</button> : null}
+                {!isPendingDungeon && <p className={!canEnter ? "is-status" : ""}>{isActiveDungeon ? "Retourner à l’exploration termine définitivement cette tentative." : lockMessage ?? "En combat, l’entrée attendra la fin de l’ennemi actuel."}</p>}
+                {isActiveDungeon ? <button type="button" className="is-danger" onClick={() => { if (abandonDungeon()) navigation.returnToDashboard(); }}>Retour à l’exploration</button> : !isPendingDungeon ? <button type="button" disabled={!canEnter} aria-describedby={lockMessage === undefined ? undefined : tooltipId} onClick={() => { startDungeon(dungeon.id); }}>{getEnterLabel(access)}</button> : null}
               </footer>
               {lockMessage === undefined ? null : <span id={tooltipId} className="world-dungeon-card__tooltip" role="tooltip">{lockMessage}</span>}
             </article>
