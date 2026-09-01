@@ -44,6 +44,10 @@
   gap: 6px;
 }
 
+.dashboard-production-worker:only-child {
+  grid-column: 1 / -1;
+}
+
 .dashboard-production-worker {
   display: grid;
   min-width: 0;
