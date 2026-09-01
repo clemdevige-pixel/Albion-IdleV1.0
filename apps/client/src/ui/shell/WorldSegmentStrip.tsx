@@ -66,8 +66,8 @@ function ActivityCombatTimeline({ model }: { readonly model: CombatTimelineModel
 
 /**
  * Single permanent combat timeline.
- * World segments remain the default mode; active instanced combat projects its
- * own authoritative progression into the same visual contract.
+ * World segments remain the default mode; active or preparing instanced combat
+ * projects its authoritative progression into the same visual contract.
  */
 export function WorldSegmentStrip(): JSX.Element {
   const bridge = useGameBridge();
@@ -93,7 +93,7 @@ export function WorldSegmentStrip(): JSX.Element {
     return <ActivityCombatTimeline model={buildDungeonCombatTimeline(activeDungeonRun, activeDungeonDefinition)} />;
   }
 
-  if (towerState.active) {
+  if (towerState.engaged) {
     return <ActivityCombatTimeline model={buildTowerCombatTimeline(towerState.progression)} />;
   }
 
