@@ -10,6 +10,7 @@ import {
   useResourceTracking,
 } from "../dashboard/ResourceTrackingContext";
 import { ItemGrid } from "../shared";
+import { getStorageCapacitySnapshot } from "../shared/storageCapacity";
 import { getStorageItemCategory } from "../shared/storageItemCategory";
 import { useBankData } from "./useBankData";
 import "../shared/storageModule.css";
@@ -38,7 +39,6 @@ const BANK_FILTERS: readonly { readonly id: BankFilter; readonly label: string }
 ];
 
 const ROMAN_TAB_LABELS = ["I", "II", "III", "IV", "V"] as const;
-const CAPACITY_WARNING_RATIO = 0.85;
 
 function matchesBankFilter(slot: InventorySlotVM, filter: BankFilter): boolean {
   if (filter === "all") return true;
@@ -55,13 +55,7 @@ function getTabRange(tabNumber: number, tabCapacity: number): StorageRange {
   return { start: (tabNumber - 1) * tabCapacity, length: tabCapacity };
 }
 
-export function BankModule({
-  onMove,
-  canMoveToRange,
-  onMoveToRange,
-  onTransferToInventory,
-  onSort,
-}: BankModuleProps): JSX.Element {
+export function BankModule({ onMove, canMoveToRange, onMoveToRange, onTransferToInventory, onSort }: BankModuleProps): JSX.Element {
   const bank = useBankData();
   const services = useGameServices();
   const tracking = useResourceTracking();
@@ -75,17 +69,13 @@ export function BankModule({
   const [contextMenu, setContextMenu] = useState<BankContextMenuState | undefined>(undefined);
 
   useEffect(() => {
-    if (activeBankTab > expansion.unlockedTabCount) {
-      setActiveBankTab(expansion.unlockedTabCount);
-    }
+    if (activeBankTab > expansion.unlockedTabCount) setActiveBankTab(expansion.unlockedTabCount);
   }, [activeBankTab, expansion.unlockedTabCount]);
 
   useEffect(() => {
     if (contextMenu === undefined) return;
     const close = (): void => { setContextMenu(undefined); };
-    const closeOnEscape = (event: KeyboardEvent): void => {
-      if (event.key === "Escape") close();
-    };
+    const closeOnEscape = (event: KeyboardEvent): void => { if (event.key === "Escape") close(); };
     window.addEventListener("click", close);
     window.addEventListener("blur", close);
     window.addEventListener("keydown", closeOnEscape);
@@ -99,13 +89,8 @@ export function BankModule({
   const tabStart = (activeBankTab - 1) * expansion.tabCapacity;
   const tabEnd = tabStart + expansion.tabCapacity;
   const activeTabSlots = bank.slots.filter((slot) => slot.position >= tabStart && slot.position < tabEnd);
-  const activeTabOccupied = activeTabSlots.reduce(
-    (count, slot) => count + (slot.itemId === undefined ? 0 : 1),
-    0,
-  );
-  const capacityRatio = expansion.tabCapacity === 0 ? 0 : activeTabOccupied / expansion.tabCapacity;
-  const capacityPercent = Math.min(100, capacityRatio * 100);
-  const capacityState = capacityRatio >= 1 ? "full" : capacityRatio >= CAPACITY_WARNING_RATIO ? "warning" : "normal";
+  const activeTabOccupied = activeTabSlots.reduce((count, slot) => count + (slot.itemId === undefined ? 0 : 1), 0);
+  const capacity = getStorageCapacitySnapshot(activeTabOccupied, expansion.tabCapacity);
   const filteredSlots = activeTabSlots.filter((slot) => matchesBankFilter(slot, activeFilter));
   const activeLabel = ROMAN_TAB_LABELS[activeBankTab - 1] ?? String(activeBankTab);
 
@@ -148,9 +133,7 @@ export function BankModule({
                   event.dataTransfer.dropEffect = "move";
                   setDragTargetTab(tabNumber);
                 }}
-                onDragLeave={() => {
-                  if (dragTargetTab === tabNumber) setDragTargetTab(undefined);
-                }}
+                onDragLeave={() => { if (dragTargetTab === tabNumber) setDragTargetTab(undefined); }}
                 onDrop={(event) => { moveDraggedItemToTab(event, tabNumber); }}
                 title={tabNumber === activeBankTab ? undefined : `Déposer ici pour déplacer vers Banque ${label}`}
               >
@@ -161,43 +144,23 @@ export function BankModule({
         </div>
       )}
 
-      <section className={`storage-module__summary storage-module__summary--${capacityState}`} aria-label={`Capacité de la banque ${activeLabel}`}>
+      <section className={`storage-module__summary storage-module__summary--${capacity.state}`} aria-label={`Capacité de la banque ${activeLabel}${capacity.state === "full" ? " · pleine" : capacity.state === "warning" ? ` · presque pleine · ${String(capacity.freeSlots)} places restantes` : ""}`}>
         <div className="storage-module__summary-row">
-          <div>
-            <small>Stockage sécurisé</small>
-            <span>Banque {activeLabel}</span>
-          </div>
+          <div><small>Stockage sécurisé</small><span>Banque {activeLabel}</span></div>
           <strong>{String(activeTabOccupied)} <small>/ {String(expansion.tabCapacity)}</small></strong>
         </div>
         <div className="storage-module__capacity-track" aria-hidden="true">
-          <span className="storage-module__capacity-fill" style={{ width: `${String(capacityPercent)}%` }} />
+          <span className="storage-module__capacity-fill" style={{ width: `${String(capacity.percent)}%` }} />
         </div>
-        {capacityState !== "normal" && (
-          <small className="storage-module__capacity-state">
-            {capacityState === "full" ? "Banque pleine" : "Banque presque pleine"}
-          </small>
-        )}
       </section>
 
       <div className="storage-module__toolbar">
-        <button
-          type="button"
-          className="storage-module__sort-button"
-          onClick={() => { onSort?.(tabStart, expansion.tabCapacity); }}
-          aria-label={`Trier la banque ${activeLabel}`}
-          title={`Trier la banque ${activeLabel}`}
-        >
+        <button type="button" className="storage-module__sort-button" onClick={() => { onSort?.(tabStart, expansion.tabCapacity); }} aria-label={`Trier la banque ${activeLabel}`} title={`Trier la banque ${activeLabel}`}>
           <img src="/assets/ui/action-sort.png" alt="" aria-hidden="true" draggable={false} />
         </button>
         <div className="storage-module__filters" role="group" aria-label="Filtrer la banque">
           {BANK_FILTERS.map((filter) => (
-            <button
-              key={filter.id}
-              type="button"
-              className={activeFilter === filter.id ? "is-active" : ""}
-              aria-pressed={activeFilter === filter.id}
-              onClick={() => { setActiveFilter(filter.id); }}
-            >
+            <button key={filter.id} type="button" className={activeFilter === filter.id ? "is-active" : ""} aria-pressed={activeFilter === filter.id} onClick={() => { setActiveFilter(filter.id); }}>
               {filter.label}
             </button>
           ))}
@@ -214,32 +177,19 @@ export function BankModule({
             interactionHint="Double-cliquez pour transférer vers l’inventaire. Glissez-déposez pour organiser."
             draggable
             {...(onMove === undefined ? {} : { onItemDrop: onMove })}
-            onItemDoubleClick={(_event, slot) => {
-              if (slot.itemId !== undefined) onTransferToInventory?.(slot.position);
-            }}
+            onItemDoubleClick={(_event, slot) => { if (slot.itemId !== undefined) onTransferToInventory?.(slot.position); }}
             onItemContextMenu={openMoveContextMenu}
             {...(yieldTrackingUnlocked ? {
               canFavoriteItem: isTrackableResourceItem,
               isItemFavorite: tracking.isTracked,
-              onToggleItemFavorite: (itemId: string) => {
-                tracking.toggleTracked(createTrackedItemResource(itemId, getItemDisplayName(itemId)));
-              },
+              onToggleItemFavorite: (itemId: string) => { tracking.toggleTracked(createTrackedItemResource(itemId, getItemDisplayName(itemId))); },
             } : {})}
           />
-        ) : (
-          <p className="storage-module__empty-filter">Aucun objet dans cette catégorie.</p>
-        )}
+        ) : <p className="storage-module__empty-filter">Aucun objet dans cette catégorie.</p>}
       </section>
 
       {contextMenu !== undefined && (
-        <div
-          className="storage-module__context-menu"
-          role="menu"
-          aria-label="Déplacer vers une autre banque"
-          style={{ left: contextMenu.x, top: contextMenu.y }}
-          onClick={(event) => { event.stopPropagation(); }}
-          onContextMenu={(event) => { event.preventDefault(); }}
-        >
+        <div className="storage-module__context-menu" role="menu" aria-label="Déplacer vers une autre banque" style={{ left: contextMenu.x, top: contextMenu.y }} onClick={(event) => { event.stopPropagation(); }} onContextMenu={(event) => { event.preventDefault(); }}>
           <strong>Déplacer vers</strong>
           {Array.from({ length: expansion.unlockedTabCount }, (_, index) => index + 1)
             .filter((tabNumber) => tabNumber !== activeBankTab)
@@ -248,16 +198,7 @@ export function BankModule({
               const range = getTabRange(tabNumber, expansion.tabCapacity);
               const canMove = canMoveToRange?.(contextMenu.position, range) ?? false;
               return (
-                <button
-                  key={tabNumber}
-                  type="button"
-                  role="menuitem"
-                  disabled={!canMove}
-                  onClick={() => {
-                    moveItemToTab(contextMenu.position, tabNumber);
-                    setContextMenu(undefined);
-                  }}
-                >
+                <button key={tabNumber} type="button" role="menuitem" disabled={!canMove} onClick={() => { moveItemToTab(contextMenu.position, tabNumber); setContextMenu(undefined); }}>
                   Banque {label}{canMove ? "" : " · pleine"}
                 </button>
               );
