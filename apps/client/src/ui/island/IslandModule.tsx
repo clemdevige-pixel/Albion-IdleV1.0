@@ -145,9 +145,8 @@ export function IslandModule(): JSX.Element {
 
   return (
     <div className="ui-island ui-island--overview">
-      <section className="ui-island__intro">
+      <section className="ui-island__intro" aria-label="Résumé de l’île">
         <div>
-          <span className="ui-island__eyebrow">Île du joueur</span>
           <strong>Niveau {String(islandLevel)} · {islandLevelDefinition?.label ?? "Développement"}</strong>
           <small>Développez vos bâtiments et vos filières de production.</small>
         </div>
