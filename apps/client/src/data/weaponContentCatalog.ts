@@ -1,7 +1,12 @@
 import {
+  FACTION_ARTIFACT_ABILITIES,
+  FACTION_ARTIFACT_ADVANTAGE,
+  FACTION_ARTIFACT_DAMAGE_BONUS_PERCENT_BY_TIER,
+  FACTION_ARTIFACT_WEAPON_CONTENT,
   STANDARD_WEAPON_ABILITIES,
   STANDARD_WEAPON_CONTENT,
   STANDARD_WEAPON_FAMILIES,
+  type ArtifactFaction,
   type AuthoredWeaponAbilityAutoRule,
   type AuthoredWeaponAbilityDefinition,
   type AuthoredWeaponAbilityMechanic,
@@ -12,28 +17,20 @@ import {
   type AuthoredWeaponFamilyId,
   type AuthoredWeaponItemContent,
   type AuthoredWeaponSpecializationContent,
+  type FactionArtifactWeaponSpecializationContent,
 } from "@game/data";
 import {
   asMasteryId,
   WEAPON_MASTERY_XP,
-  type AbilityDefinitionLike,
   type EquipmentInfoLike,
 } from "@game/gameplay";
-import {
-  FACTION_ARTIFACT_ABILITIES,
-  FACTION_ARTIFACT_ADVANTAGE,
-  FACTION_ARTIFACT_DAMAGE_BONUS_PERCENT_BY_TIER,
-  FACTION_ARTIFACT_WEAPON_CONTENT,
-  type ArtifactFaction,
-  type FactionArtifactWeaponSpecializationContent,
-} from "./factionArtifactWeaponContent.js";
 
 export type WeaponCombatProfile = AuthoredWeaponCombatProfile;
 export type AbilityAutoRule = AuthoredWeaponAbilityAutoRule;
 export type AbilityMechanic = AuthoredWeaponAbilityMechanic;
 export type AbilityMechanicsProfile = AuthoredWeaponAbilityMechanicsProfile;
 export type AbilityAutoCastRule = AbilityAutoRule;
-export type ClientAbilityDefinition = AuthoredWeaponAbilityDefinition & AbilityDefinitionLike;
+export type ClientAbilityDefinition = AuthoredWeaponAbilityDefinition;
 export interface WeaponAbilityUnlock { readonly unlockMasteryLevel: number; readonly source: "family" | "specialization"; readonly ability: ClientAbilityDefinition; }
 export type WeaponCraftMaterial = AuthoredWeaponCraftMaterial;
 export type WeaponCraftRule = AuthoredWeaponCraftRule;
@@ -53,10 +50,7 @@ export const WEAPON_FAMILIES = {
   dagger: { masteryId: STANDARD_WEAPON_FAMILIES.dagger.masteryId, name: STANDARD_WEAPON_FAMILIES.dagger.name, sharedAbilities: familyAbilities("dagger") },
 } as const;
 export type WeaponFamilyId = AuthoredWeaponFamilyId;
-type WeaponItemContent = Omit<AuthoredWeaponItemContent, "handling" | "stats"> & {
-  readonly handling: EquipmentInfoLike["handling"];
-  readonly stats: EquipmentInfoLike["stats"];
-};
+type WeaponItemContent = AuthoredWeaponItemContent;
 export interface WeaponProjectilePresentation { readonly kind: "projectile"; readonly projectileId: string; readonly releaseDelayMs: number; }
 export interface WeaponPresentationContent { readonly itemIcon: string; readonly actorManifestId: string; readonly combatProfileId: string; readonly combatPresentation?: WeaponProjectilePresentation; }
 interface WeaponSpecializationContent {
@@ -107,7 +101,7 @@ function importArtifactSpecialization(entry: FactionArtifactWeaponSpecialization
     combatProfile: entry.combatProfile,
     attackSpeed: entry.attackSpeed,
     artifactFaction: entry.artifactFaction,
-    signatureAbility: entry.signatureAbility as unknown as ClientAbilityDefinition,
+    signatureAbility: entry.signatureAbility,
     craft: entry.craft,
     items: entry.items,
   };
@@ -118,7 +112,7 @@ const WEAPON_CONTENT: readonly WeaponSpecializationContent[] = [
   ...FACTION_ARTIFACT_WEAPON_CONTENT.map(importArtifactSpecialization),
 ];
 
-const ALL_ARTIFACT_ABILITIES = Object.values(FACTION_ARTIFACT_ABILITIES) as unknown as readonly ClientAbilityDefinition[];
+const ALL_ARTIFACT_ABILITIES: readonly ClientAbilityDefinition[] = Object.values(FACTION_ARTIFACT_ABILITIES);
 export const CLIENT_ABILITIES: Readonly<Record<string, ClientAbilityDefinition>> = Object.fromEntries(
   [...Object.values(ABILITIES), ...ALL_ARTIFACT_ABILITIES].map((ability) => [ability.id, ability] as const),
 );
