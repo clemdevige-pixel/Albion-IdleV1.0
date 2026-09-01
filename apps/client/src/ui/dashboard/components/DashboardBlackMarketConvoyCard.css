@@ -1,0 +1,56 @@
+.dashboard-black-market-convoy {
+  display: grid;
+  width: 100%;
+  gap: var(--ui-space-2);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dashboard-black-market-convoy__summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--ui-space-3);
+  align-items: end;
+}
+
+.dashboard-black-market-convoy__summary > div {
+  display: grid;
+  min-width: 0;
+  gap: 1px;
+}
+
+.dashboard-black-market-convoy__summary span,
+.dashboard-black-market-convoy__summary small {
+  color: var(--ui-color-text-muted);
+  font-size: var(--ui-text-xs);
+}
+
+.dashboard-black-market-convoy__summary strong {
+  overflow: hidden;
+  color: var(--ui-color-text-primary);
+  font-size: var(--ui-text-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dashboard-black-market-convoy__payout {
+  text-align: right;
+}
+
+.dashboard-black-market-convoy__payout strong {
+  color: var(--ui-color-accent-hover);
+}
+
+.dashboard-black-market-convoy:hover .dashboard-black-market-convoy__summary strong,
+.dashboard-black-market-convoy:focus-visible .dashboard-black-market-convoy__summary strong {
+  color: var(--ui-color-accent-hover);
+}
+
+.dashboard-black-market-convoy:focus-visible {
+  outline: 1px solid var(--ui-color-accent);
+  outline-offset: 3px;
+}
