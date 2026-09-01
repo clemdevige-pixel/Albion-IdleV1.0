@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { RESEARCH_IDS } from "../../data/researchContentCatalog";
 import { useGameServices } from "../../state/GameContext";
+import { FEATURE_UNLOCK_VISITS, useFeatureUnlockVisit } from "../attention/usePlayerAttention";
 import { formatCompactNumber } from "../shared";
 import { useNavigation } from "../navigation";
 import { BlackMarketView } from "./black-market/BlackMarketView";
@@ -48,6 +49,14 @@ export function MerchantModule(): JSX.Element {
   ) ? "buy" : target?.service;
   const [service, setService] = useState<MerchantServiceId>(targetService ?? "buy");
   const { wallet } = useMerchantData();
+
+  useFeatureUnlockVisit(
+    service === "enchant"
+      ? FEATURE_UNLOCK_VISITS.enchantment
+      : service === "black_market"
+        ? FEATURE_UNLOCK_VISITS.blackMarket
+        : [],
+  );
 
   useEffect(() => {
     if (targetService !== undefined) setService(targetService);
