@@ -167,7 +167,7 @@ export class TowerNavigationActions {
   }
 
   public abandon(): boolean {
-    if (!this.deps.towerRouter.isTowerActive()) return false;
+    if (!this.deps.towerRouter.isTowerEngaged()) return false;
     if (this.pendingAbandon) return true;
 
     const loopState = this.deps.combatRuntime.getLoopState();
