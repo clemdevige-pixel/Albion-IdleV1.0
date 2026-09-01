@@ -1,53 +1,16 @@
-import { useMemo, useState } from "react";
-import type { ItemInstanceId } from "@game/gameplay";
+import { useState } from "react";
 import { getItemDisplayName, ItemVisual } from "../../../panels/ItemVisual";
-import { useGameBridge, useGameServices } from "../../../state/GameContext";
+import { usePlayerAttention } from "../../attention/usePlayerAttention";
 import { useNavigation } from "../../navigation";
 import { UI_MODULE_IDS } from "../../navigation/moduleIds";
 import { DashboardCard } from "./DashboardCard";
 
-interface EnchantReadyItem {
-  readonly instanceId: string;
-  readonly itemId: string;
-  readonly currentLevel: number;
-  readonly nextLevel: number;
-}
-
 export function DashboardEnchantReadyCard(): JSX.Element | null {
-  const bridge = useGameBridge();
-  const { enchantmentService } = useGameServices();
   const navigation = useNavigation();
+  const { enchantReadyItems } = usePlayerAttention();
   const [hidden, setHidden] = useState<ReadonlySet<string>>(() => new Set());
 
-  const readyItems = useMemo<readonly EnchantReadyItem[]>(() => {
-    const instances = [
-      ...bridge.equipment.slots,
-      ...bridge.inventory.slots,
-      ...bridge.bank.slots,
-    ];
-    const seen = new Set<string>();
-    const ready: EnchantReadyItem[] = [];
-
-    for (const slot of instances) {
-      if (slot.itemId === undefined || slot.instanceId === undefined || seen.has(slot.instanceId)) continue;
-      seen.add(slot.instanceId);
-      const preview = enchantmentService.preview(slot.instanceId as ItemInstanceId);
-      if (preview?.nextLevel === undefined) continue;
-      const economicallyReady = preview.materials.every((material) => material.missing === 0)
-        && bridge.wallet.silver >= preview.silverCost;
-      const onlyBlockedByCombat = preview.failureReason === undefined || preview.failureReason === "combat_active";
-      if (!economicallyReady || !onlyBlockedByCombat) continue;
-      ready.push({
-        instanceId: slot.instanceId,
-        itemId: slot.itemId,
-        currentLevel: preview.currentLevel,
-        nextLevel: preview.nextLevel,
-      });
-    }
-    return ready;
-  }, [bridge, enchantmentService]);
-
-  const visible = readyItems.filter((item) => !hidden.has(`${item.instanceId}:${String(item.nextLevel)}`));
+  const visible = enchantReadyItems.filter((item) => !hidden.has(`${item.instanceId}:${String(item.nextLevel)}`));
   if (visible.length === 0) return null;
 
   return (
