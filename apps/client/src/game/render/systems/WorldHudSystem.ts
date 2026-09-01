@@ -5,12 +5,15 @@ import {
   type WorldHudActorId,
 } from "../presentation/WorldHudAnchorStore";
 
+type EncounterType = "normal" | "elite" | "boss" | "resource";
+
 interface ActorHealthHud {
   readonly actorId: WorldHudActorId;
   readonly background: Phaser.GameObjects.Rectangle;
   readonly fill: Phaser.GameObjects.Rectangle;
   readonly value: Phaser.GameObjects.Text;
   readonly label: Phaser.GameObjects.Text;
+  readonly encounterBadge: Phaser.GameObjects.Text | undefined;
   width: number;
   lastCurrent: number | undefined;
   lastMaximum: number | undefined;
@@ -22,6 +25,7 @@ interface ActorHealthHud {
 
 const ACTOR_HUD_HEAD_GAP = 10;
 const STATUS_EFFECT_CLEARANCE = 6;
+const ENCOUNTER_BADGE_GAP = 7;
 
 type HudAnchorActor = Phaser.GameObjects.Sprite | Phaser.GameObjects.Image;
 
@@ -67,12 +71,19 @@ export class WorldHudSystem {
     this.updateActor(this.player, current, maximum);
   }
 
-  public updateEnemy(current: number, maximum: number, name: string): void {
+  public updateEnemy(
+    current: number,
+    maximum: number,
+    name: string,
+    encounterType: EncounterType,
+  ): void {
     this.updateActor(this.enemy, current, maximum);
     if (name !== this.enemy.lastLabel) {
       this.enemy.lastLabel = name;
       this.enemy.label.setText(name);
+      this.layoutEncounterBadge(this.enemy);
     }
+    this.updateEncounterBadge(this.enemy, encounterType);
   }
 
   public layoutPlayer(
@@ -125,6 +136,7 @@ export class WorldHudSystem {
     actor.fill.setVisible(visible);
     actor.value.setVisible(visible);
     actor.label.setVisible(visible);
+    actor.encounterBadge?.setVisible(visible && actor.encounterBadge.text.length > 0);
     worldHudAnchorStore.setVisible(actor.actorId, visible);
   }
 
@@ -192,14 +204,30 @@ export class WorldHudSystem {
       })
       .setOrigin(0.5)
       .setDepth(actorLabel.depth);
+    const encounterBadge = actorId === "enemy"
+      ? this.scene.add
+          .text(x, barY - actorLabel.offsetY, "", {
+            fontFamily: actorLabel.fontFamily,
+            fontSize: "7px",
+            fontStyle: "bold",
+            color: "#d6e9ff",
+            backgroundColor: "rgba(29, 54, 82, 0.92)",
+          })
+          .setPadding(4, 1, 4, 1)
+          .setOrigin(0, 0.5)
+          .setDepth(actorLabel.depth + 1)
+          .setVisible(false)
+      : undefined;
 
     this.objects.push(background, fill, value, labelText);
+    if (encounterBadge !== undefined) this.objects.push(encounterBadge);
     const hud: ActorHealthHud = {
       actorId,
       background,
       fill,
       value,
       label: labelText,
+      encounterBadge,
       width,
       lastCurrent: undefined,
       lastMaximum: undefined,
@@ -231,6 +259,7 @@ export class WorldHudSystem {
     hud.fill.setPosition(x - width / 2, barY);
     hud.value.setPosition(x, barY - valueText.offsetY);
     hud.label.setPosition(x, barY - actorLabel.offsetY);
+    this.layoutEncounterBadge(hud);
 
     if (
       widthChanged
@@ -246,6 +275,32 @@ export class WorldHudSystem {
       y: barY + healthBar.height / 2 + 8,
       visible: hud.background.visible,
     });
+  }
+
+  private layoutEncounterBadge(hud: ActorHealthHud): void {
+    if (hud.encounterBadge === undefined) return;
+    hud.encounterBadge.setPosition(
+      hud.label.x + hud.label.displayWidth / 2 + ENCOUNTER_BADGE_GAP,
+      hud.label.y,
+    );
+  }
+
+  private updateEncounterBadge(hud: ActorHealthHud, encounterType: EncounterType): void {
+    const badge = hud.encounterBadge;
+    if (badge === undefined) return;
+
+    if (encounterType !== "elite" && encounterType !== "boss") {
+      badge.setText("").setVisible(false);
+      return;
+    }
+
+    const isBoss = encounterType === "boss";
+    badge
+      .setText(isBoss ? "BOSS" : "ÉLITE")
+      .setColor(isBoss ? "#ffd9d4" : "#d6e9ff")
+      .setBackgroundColor(isBoss ? "rgba(91, 24, 24, 0.94)" : "rgba(29, 54, 82, 0.92)")
+      .setVisible(hud.lastVisible !== false);
+    this.layoutEncounterBadge(hud);
   }
 
   private updateActor(
