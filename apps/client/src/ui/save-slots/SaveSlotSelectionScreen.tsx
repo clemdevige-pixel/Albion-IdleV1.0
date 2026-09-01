@@ -34,6 +34,17 @@ export function SaveSlotSelectionScreen({
       try {
         catalog.migrateLocalSavesToAccount();
         await synchronizer.synchronizeAll();
+        if (cancelled) return;
+
+        const previousAccountId = catalog.getRecoverablePreviousAccountId();
+        if (previousAccountId !== undefined) {
+          const confirmed = window.confirm(
+            "Des sauvegardes locales d'une ancienne identité de compte ont été retrouvées sur ce navigateur. Les rattacher à votre compte actuel ?",
+          );
+          if (confirmed && catalog.recoverPreviousAccountSaves(previousAccountId)) {
+            await synchronizer.synchronizeAll();
+          }
+        }
       } catch (error) {
         console.error("[Persistence] Save synchronization failed:", error);
         if (!cancelled) {
