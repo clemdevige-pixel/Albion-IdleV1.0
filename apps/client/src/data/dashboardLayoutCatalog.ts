@@ -5,6 +5,7 @@ export const DASHBOARD_SECTION_IDS = [
   "enchant-ready",
   "tracked-resources",
   "production",
+  "black-market-convoy",
   "player",
   "zone",
   "activity",
@@ -19,6 +20,7 @@ export const DEFAULT_DASHBOARD_SECTION_ORDER = [
   "yield",
   "enchant-ready",
   "production",
+  "black-market-convoy",
 ] as const satisfies readonly DashboardSectionId[];
 
 const DASHBOARD_SECTION_ID_SET = new Set<string>(DASHBOARD_SECTION_IDS);
