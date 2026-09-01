@@ -20,7 +20,7 @@ import {
   isTrackableResourceItem,
   useResourceTracking,
 } from "../dashboard/ResourceTrackingContext";
-import { useNavigation } from "../navigation";
+import { UI_MODULE_IDS, useNavigation } from "../navigation";
 import { ItemGrid } from "../shared";
 import { getStorageCapacitySnapshot } from "../shared/storageCapacity";
 import { getStorageItemCategory } from "../shared/storageItemCategory";
@@ -61,7 +61,7 @@ export function InventoryModule(): JSX.Element {
   const actions = useInventoryActions();
   const services = useGameServices();
   const tracking = useResourceTracking();
-  const { activeView } = useNavigation();
+  const { activeView, openModule } = useNavigation();
   const bankExpansion = services.getBankExpansionModel();
   const yieldTrackingUnlocked = services.getAcademyModel().research.some(
     (research) => research.id === RESEARCH_IDS.yieldAnalysis && research.state === "completed",
@@ -120,7 +120,15 @@ export function InventoryModule(): JSX.Element {
   const handleFilterChange = useCallback((filter: InventoryFilter) => {
     setActiveFilter(filter);
     setContextMenu(null);
-  }, []);
+    if (activeView !== null) openModule(UI_MODULE_IDS.inventory);
+  }, [activeView, openModule]);
+
+  const selectStorageTab = useCallback((tab: StorageTab) => {
+    setActiveTab(tab);
+    setContextMenu(null);
+    if (tab === "bank") openModule(UI_MODULE_IDS.inventory, "bank");
+    else openModule(UI_MODULE_IDS.inventory);
+  }, [openModule]);
 
   const contextItemId = contextMenu === null
     ? undefined
@@ -150,10 +158,10 @@ export function InventoryModule(): JSX.Element {
   return (
     <div className="storage-module">
       <div className="storage-module__tabs" role="tablist" aria-label="Stockage">
-        <button type="button" role="tab" aria-selected={activeTab === "inventory"} className={activeTab === "inventory" ? "is-active" : ""} onClick={() => { setActiveTab("inventory"); setContextMenu(null); }}>
+        <button type="button" role="tab" aria-selected={activeTab === "inventory"} className={activeTab === "inventory" ? "is-active" : ""} onClick={() => { selectStorageTab("inventory"); }}>
           Inventaire
         </button>
-        <button type="button" role="tab" aria-selected={activeTab === "bank"} className={activeTab === "bank" ? "is-active" : ""} onClick={() => { setActiveTab("bank"); setContextMenu(null); }}>
+        <button type="button" role="tab" aria-selected={activeTab === "bank"} className={activeTab === "bank" ? "is-active" : ""} onClick={() => { selectStorageTab("bank"); }}>
           Banque
           <FeatureAttentionBadge count={bankUnlockCount} />
         </button>
