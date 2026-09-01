@@ -1,0 +1,95 @@
+@import "../character/character.css";
+
+.activity-result--tower-block {
+  width: min(980px, calc(100vw - 32px));
+  max-width: 980px;
+}
+
+.tower-block-recap__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 350px);
+  gap: 18px;
+  align-items: start;
+  margin-top: 12px;
+}
+
+.tower-block-recap__summary-column {
+  min-width: 0;
+}
+
+.tower-block-recap__equipment {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #343a41;
+  border-radius: 6px;
+  background: #0c1014;
+}
+
+.tower-block-recap__equipment .character-module__equipment-title {
+  margin: 0;
+  color: #e3d7bd;
+  font: 700 15px var(--ui-font-display);
+}
+
+.tower-block-recap__equipment .character-module__presets {
+  padding-top: 10px;
+}
+
+.tower-block-recap__equipment .character-module__preset-editor {
+  grid-template-columns: 1fr 1fr;
+}
+
+.tower-block-recap__equipment .character-module__preset-editor input {
+  grid-column: 1 / -1;
+}
+
+.tower-block-recap__equipment .character-module__loadout--compact {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  padding-top: 12px;
+}
+
+.tower-block-recap__equipment .character-module__loadout--compact .character-module__slots {
+  justify-items: center;
+}
+
+.tower-block-recap__equipment .character-module__loadout--compact .ui-item-slot {
+  width: 72px;
+  min-width: 72px;
+  height: 72px;
+}
+
+.tower-block-recap__equipment .character-module__loadout--compact .ui-item-slot__label {
+  font-size: 7px;
+}
+
+.activity-result--tower-block .activity-result__footer:has(.activity-result__text-action) {
+  grid-template-columns: 1fr;
+}
+
+.activity-result--tower-block .activity-result__footer .dungeon-recap__action--primary {
+  width: min(320px, 100%);
+  justify-self: center;
+}
+
+@media (max-width: 820px) {
+  .activity-result--tower-block {
+    width: min(620px, calc(100vw - 24px));
+  }
+
+  .tower-block-recap__layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .tower-block-recap__equipment .character-module__preset-toolbar,
+  .tower-block-recap__equipment .character-module__preset-editor {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .tower-block-recap__equipment .character-module__preset-select,
+  .tower-block-recap__equipment .character-module__preset-editor input {
+    grid-column: 1 / -1;
+  }
+}
