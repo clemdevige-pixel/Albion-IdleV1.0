@@ -187,8 +187,6 @@ export function CharacterModule(): JSX.Element {
   return (
     <div className="character-module">
       <section className="character-module__equipment" aria-label="Équipement actuel">
-        <div className="character-module__equipment-heading"><span>Équipement</span></div>
-
         <div className="character-module__presets" aria-label="Loadouts d'équipement">
           <small className="character-module__presets-label">Loadout</small>
           <div className="character-module__preset-toolbar">
