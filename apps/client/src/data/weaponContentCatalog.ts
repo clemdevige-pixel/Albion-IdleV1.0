@@ -53,7 +53,10 @@ export const WEAPON_FAMILIES = {
   dagger: { masteryId: STANDARD_WEAPON_FAMILIES.dagger.masteryId, name: STANDARD_WEAPON_FAMILIES.dagger.name, sharedAbilities: familyAbilities("dagger") },
 } as const;
 export type WeaponFamilyId = AuthoredWeaponFamilyId;
-type WeaponItemContent = AuthoredWeaponItemContent;
+type WeaponItemContent = Omit<AuthoredWeaponItemContent, "handling" | "stats"> & {
+  readonly handling: EquipmentInfoLike["handling"];
+  readonly stats: EquipmentInfoLike["stats"];
+};
 export interface WeaponProjectilePresentation { readonly kind: "projectile"; readonly projectileId: string; readonly releaseDelayMs: number; }
 export interface WeaponPresentationContent { readonly itemIcon: string; readonly actorManifestId: string; readonly combatProfileId: string; readonly combatPresentation?: WeaponProjectilePresentation; }
 interface WeaponSpecializationContent {
