@@ -8,6 +8,7 @@ import {
   getItemDisplayName,
   ItemVisual,
 } from "../../../panels/ItemVisual";
+import { EnchantmentDiamonds } from "../../shared/EnchantmentDiamonds";
 
 export type EquipmentCandidateSource = "inventory" | "bank";
 
@@ -37,13 +38,21 @@ export function CharacterEquipmentPicker({ label, candidates, x, y, onClose, onE
             if (candidate.itemId === undefined) return null;
             const tier = getItemTier(candidate.itemId);
             return (
-              <ItemHoverTooltip key={`${candidate.source}:${String(candidate.position)}`} itemId={candidate.itemId} quantity={candidate.quantity} instanceId={candidate.instanceId}>
+              <ItemHoverTooltip
+                key={`${candidate.source}:${String(candidate.position)}`}
+                itemId={candidate.itemId}
+                quantity={candidate.quantity}
+                instanceId={candidate.instanceId}
+                enchantmentOverride={candidate.enchantment}
+                showEnchantmentLevel
+              >
                 <button type="button" className={`character-picker__item${getEquipmentTierFrameClass(tier)}`} onClick={() => { onEquip(candidate.source, candidate.position); }}>
                   <span className="character-picker__icon">
                     <ItemVisual itemId={candidate.itemId} />
                     {candidate.quantity > 1 && <small>{String(candidate.quantity)}</small>}
                   </span>
                   <span>{getItemDisplayName(candidate.itemId)}<small>{candidate.source === "bank" ? "Banque" : "Inventaire"}</small></span>
+                  <span className="character-picker__enchantment"><EnchantmentDiamonds level={candidate.enchantment} /></span>
                   {tier !== undefined && <strong className={getEnchantmentTextClass(candidate.enchantment).trim()}>T{String(tier)}.{String(candidate.enchantment)}</strong>}
                 </button>
               </ItemHoverTooltip>
