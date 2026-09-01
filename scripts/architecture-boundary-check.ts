@@ -8,7 +8,25 @@ interface BoundaryRule {
   readonly forbiddenRuntimeLibraries: readonly string[];
 }
 
+interface AppBoundaryRule {
+  readonly appDir: string;
+  readonly forbiddenPackage: string;
+  readonly forbiddenAppDir: string;
+}
+
 const RULES: readonly BoundaryRule[] = [
+  {
+    packageDir: "packages/shared",
+    forbiddenPackages: [
+      "@game/core",
+      "@game/data",
+      "@game/persistence",
+      "@game/gameplay",
+      "@game/client",
+      "@game/server",
+    ],
+    forbiddenRuntimeLibraries: ["react", "react-dom", "phaser", "fastify"],
+  },
   {
     packageDir: "packages/core",
     forbiddenPackages: ["@game/shared", "@game/data", "@game/persistence", "@game/gameplay"],
@@ -28,6 +46,19 @@ const RULES: readonly BoundaryRule[] = [
     packageDir: "packages/gameplay",
     forbiddenPackages: [],
     forbiddenRuntimeLibraries: ["react", "react-dom", "phaser", "fastify"],
+  },
+];
+
+const APP_RULES: readonly AppBoundaryRule[] = [
+  {
+    appDir: "apps/client",
+    forbiddenPackage: "@game/server",
+    forbiddenAppDir: "apps/server",
+  },
+  {
+    appDir: "apps/server",
+    forbiddenPackage: "@game/client",
+    forbiddenAppDir: "apps/client",
   },
 ];
 
@@ -86,23 +117,37 @@ function matchesPackage(specifier: string, packageName: string): boolean {
   return specifier === packageName || specifier.startsWith(`${packageName}/`);
 }
 
+function normalize(filePath: string): string {
+  return filePath.split(path.sep).join("/");
+}
+
 function isAppEscape(specifier: string, sourceFile: string): boolean {
   if (!specifier.startsWith(".")) return false;
-  const resolved = path.resolve(path.dirname(sourceFile), specifier);
-  const normalized = resolved.split(path.sep).join("/");
+  const normalized = normalize(path.resolve(path.dirname(sourceFile), specifier));
   return normalized.includes("/apps/client/") || normalized.includes("/apps/server/");
+}
+
+function resolvesInside(specifier: string, sourceFile: string, targetRoot: string): boolean {
+  if (!specifier.startsWith(".")) return false;
+  const resolved = normalize(path.resolve(path.dirname(sourceFile), specifier));
+  const normalizedTarget = normalize(path.resolve(targetRoot));
+  return resolved === normalizedTarget || resolved.startsWith(`${normalizedTarget}/`);
+}
+
+async function readDeclaredDependencies(packageRoot: string): Promise<Record<string, string>> {
+  const packageJson = JSON.parse(
+    await readFile(path.join(packageRoot, "package.json"), "utf8"),
+  ) as { dependencies?: Record<string, string>; devDependencies?: Record<string, string> };
+  return {
+    ...packageJson.dependencies,
+    ...packageJson.devDependencies,
+  };
 }
 
 async function checkRule(repoRoot: string, rule: BoundaryRule): Promise<string[]> {
   const errors: string[] = [];
   const packageRoot = path.join(repoRoot, rule.packageDir);
-  const packageJson = JSON.parse(
-    await readFile(path.join(packageRoot, "package.json"), "utf8"),
-  ) as { dependencies?: Record<string, string>; devDependencies?: Record<string, string> };
-  const declaredDependencies = {
-    ...packageJson.dependencies,
-    ...packageJson.devDependencies,
-  };
+  const declaredDependencies = await readDeclaredDependencies(packageRoot);
   const forbiddenDependencies = [
     ...rule.forbiddenPackages,
     ...rule.forbiddenRuntimeLibraries,
@@ -133,9 +178,42 @@ async function checkRule(repoRoot: string, rule: BoundaryRule): Promise<string[]
   return errors;
 }
 
+async function checkAppRule(repoRoot: string, rule: AppBoundaryRule): Promise<string[]> {
+  const errors: string[] = [];
+  const appRoot = path.join(repoRoot, rule.appDir);
+  const forbiddenAppRoot = path.join(repoRoot, rule.forbiddenAppDir);
+  const declaredDependencies = await readDeclaredDependencies(appRoot);
+
+  if (rule.forbiddenPackage in declaredDependencies) {
+    errors.push(`${rule.appDir}/package.json must not depend on '${rule.forbiddenPackage}'`);
+  }
+
+  for (const sourceFile of await listSourceFiles(path.join(appRoot, "src"))) {
+    const sourceText = await readFile(sourceFile, "utf8");
+    for (const specifier of collectModuleSpecifiers(sourceText, sourceFile)) {
+      if (matchesPackage(specifier, rule.forbiddenPackage)) {
+        errors.push(
+          `${path.relative(repoRoot, sourceFile)} imports forbidden sibling app '${specifier}'`,
+        );
+      } else if (resolvesInside(specifier, sourceFile, forbiddenAppRoot)) {
+        errors.push(
+          `${path.relative(repoRoot, sourceFile)} must not import from '${rule.forbiddenAppDir}' ('${specifier}')`,
+        );
+      }
+    }
+  }
+
+  return errors;
+}
+
 async function main(): Promise<void> {
   const repoRoot = process.cwd();
-  const errors = (await Promise.all(RULES.map((rule) => checkRule(repoRoot, rule)))).flat();
+  const errors = (
+    await Promise.all([
+      ...RULES.map((rule) => checkRule(repoRoot, rule)),
+      ...APP_RULES.map((rule) => checkAppRule(repoRoot, rule)),
+    ])
+  ).flat();
 
   if (errors.length > 0) {
     console.error("Architecture boundary check failed:\n");
