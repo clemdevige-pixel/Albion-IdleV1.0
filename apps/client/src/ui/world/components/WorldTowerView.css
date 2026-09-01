@@ -182,14 +182,10 @@
   padding: 8px 4px 2px;
 }
 
-.world-tower__timeline-rail {
-  position: absolute;
-  z-index: 0;
-  top: 22px;
-  left: 10%;
+.world-tower__timeline > .world-segment-strip__rail {
+  top: 30px;
   right: 10%;
-  height: 2px;
-  background: #2e343c;
+  left: 10%;
 }
 
 .world-tower-step {
@@ -203,15 +199,12 @@
   text-align: center;
 }
 
-.world-tower-step b {
-  display: grid;
-  width: 30px;
-  height: 30px;
-  place-items: center;
-  border: 1px solid #51452f;
-  background: #11151a;
-  color: #b9a778;
-  font: 10px var(--ui-font-display);
+.world-tower-step > .world-segment-strip__segment {
+  cursor: default;
+}
+
+.world-tower-step > .world-segment-strip__segment:hover {
+  transform: none;
 }
 
 .world-tower-step small {
@@ -220,39 +213,6 @@
   font-size: 7px;
   text-transform: uppercase;
   white-space: nowrap;
-}
-
-.world-tower-step.is-complete b {
-  border-color: #6f5a2f;
-  color: #cfa856;
-}
-
-.world-tower-step.is-current b {
-  border-color: #9a7130;
-  color: #f0d593;
-  box-shadow: inset 0 -2px #9a7130;
-}
-
-.world-tower-step--reinforced b {
-  border-color: #5a5f69;
-}
-
-.world-tower-step--elite b {
-  border-color: #725f3e;
-}
-
-.world-tower-step--block_boss b,
-.world-tower-step--major-boss b {
-  width: 34px;
-  height: 34px;
-  margin-top: -2px;
-  border-color: #8d692e;
-  color: #e8ca80;
-}
-
-.world-tower-step--major-boss b {
-  border-color: #9e8150;
-  box-shadow: 0 0 0 1px rgba(158, 129, 80, .2);
 }
 
 .world-tower__block-progress {
@@ -355,6 +315,10 @@
 
   .world-tower__timeline {
     gap: 8px;
+  }
+
+  .world-tower__timeline > .world-segment-strip__rail {
+    top: 28px;
   }
 
   .world-tower-step small {
