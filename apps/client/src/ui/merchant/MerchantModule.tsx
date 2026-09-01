@@ -1,7 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { RESEARCH_IDS } from "../../data/researchContentCatalog";
 import { useGameServices } from "../../state/GameContext";
-import { FEATURE_UNLOCK_VISITS, useFeatureUnlockVisit } from "../attention/usePlayerAttention";
+import { FeatureAttentionBadge } from "../attention/FeatureAttentionBadge";
+import {
+  FEATURE_UNLOCK_VISITS,
+  useFeatureUnlockPending,
+  useFeatureUnlockVisit,
+} from "../attention/usePlayerAttention";
 import { formatCompactNumber } from "../shared";
 import { useNavigation } from "../navigation";
 import { BlackMarketView } from "./black-market/BlackMarketView";
@@ -49,6 +54,8 @@ export function MerchantModule(): JSX.Element {
   ) ? "buy" : target?.service;
   const [service, setService] = useState<MerchantServiceId>(targetService ?? "buy");
   const { wallet } = useMerchantData();
+  const enchantUnlockCount = useFeatureUnlockPending(FEATURE_UNLOCK_VISITS.enchantment);
+  const blackMarketUnlockCount = useFeatureUnlockPending(FEATURE_UNLOCK_VISITS.blackMarket);
 
   useFeatureUnlockVisit(
     service === "enchant"
@@ -85,17 +92,25 @@ export function MerchantModule(): JSX.Element {
         {SERVICES.filter((entry) => (
           (entry.id !== "enchant" || enchantmentUnlocked)
           && (entry.id !== "black_market" || blackMarketUnlocked)
-        )).map((entry) => (
-          <button
-            type="button"
-            key={entry.id}
-            className={service === entry.id ? "is-active" : ""}
-            aria-current={service === entry.id ? "page" : undefined}
-            onClick={() => { setService(entry.id); }}
-          >
-            {entry.label}
-          </button>
-        ))}
+        )).map((entry) => {
+          const attentionCount = entry.id === "enchant"
+            ? enchantUnlockCount
+            : entry.id === "black_market"
+              ? blackMarketUnlockCount
+              : 0;
+          return (
+            <button
+              type="button"
+              key={entry.id}
+              className={service === entry.id ? "is-active" : ""}
+              aria-current={service === entry.id ? "page" : undefined}
+              onClick={() => { setService(entry.id); }}
+            >
+              {entry.label}
+              <FeatureAttentionBadge count={attentionCount} />
+            </button>
+          );
+        })}
       </nav>
       {service === "buy" && <BuyView />}
       {service === "black_market" && blackMarketUnlocked && <BlackMarketView />}
