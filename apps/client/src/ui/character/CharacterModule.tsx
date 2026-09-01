@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { EquipmentLoadout, EquipmentSlot } from "@game/gameplay";
 import { getItemTier } from "../../data/itemPower";
 import { resolveEquipmentInfo } from "../../data/itemContentCatalog";
+import { ItemContextMenu } from "../../panels/ItemContextMenu";
 import { ItemSlot } from "../shared/ItemSlot";
 import { getCroppedHeroIdleFrame, type CroppedHeroIdleFrame } from "./characterIdleFrameCrop";
 import {
@@ -30,6 +31,12 @@ const SLOT_LABELS: Readonly<Record<EquipmentSlot, string>> = {
 const LEFT_SLOTS: readonly EquipmentSlot[] = ["head", "chest", "boots"];
 const RIGHT_SLOTS: readonly EquipmentSlot[] = ["weapon", "off_hand", "cape"];
 
+interface EquipmentContextMenuState {
+  readonly slot: EquipmentSlot;
+  readonly x: number;
+  readonly y: number;
+}
+
 function formatValue(value: number): string {
   return (Math.round(value * 10) / 10).toLocaleString("fr-FR", { maximumFractionDigits: 1 });
 }
@@ -53,6 +60,7 @@ export function CharacterModule(): JSX.Element {
   const [editingLoadoutId, setEditingLoadoutId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
   const [pickerSlot, setPickerSlot] = useState<{ slot: EquipmentSlot; x: number; y: number } | null>(null);
+  const [contextMenu, setContextMenu] = useState<EquipmentContextMenuState | null>(null);
   const [croppedHeroIdle, setCroppedHeroIdle] = useState<CroppedHeroIdleFrame | undefined>(undefined);
 
   const equipmentBySlot = useMemo(
@@ -156,12 +164,21 @@ export function CharacterModule(): JSX.Element {
         disabledContent={<><strong>×</strong><small>2 mains</small></>}
         onClick={(event) => {
           if (event.detail > 1) return;
+          setContextMenu(null);
           setPickerSlot((current) => current?.slot === slot
             ? null
             : { slot, x: event.clientX, y: event.clientY });
         }}
         {...(entry?.itemId === undefined ? {} : {
-          onDoubleClick: () => { if (actions.unequip(slot)) setPickerSlot(null); },
+          onDoubleClick: () => {
+            setContextMenu(null);
+            if (actions.unequip(slot)) setPickerSlot(null);
+          },
+          onContextMenu: (event: React.MouseEvent<HTMLButtonElement>) => {
+            event.preventDefault();
+            setPickerSlot(null);
+            setContextMenu({ slot, x: event.clientX, y: event.clientY });
+          },
         })}
       />
     );
@@ -196,6 +213,7 @@ export function CharacterModule(): JSX.Element {
               onClick={() => {
                 if (selectedLoadout !== undefined && actions.applyLoadout(selectedLoadout.id)) {
                   setPickerSlot(null);
+                  setContextMenu(null);
                   setLoadoutRevision((revision) => revision + 1);
                 }
               }}
@@ -316,6 +334,17 @@ export function CharacterModule(): JSX.Element {
           y={pickerSlot.y}
           onClose={() => { setPickerSlot(null); }}
           onEquip={(source, position) => { if (actions.equip(source, position)) setPickerSlot(null); }}
+        />
+      )}
+      {contextMenu !== null && (
+        <ItemContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          onClose={() => { setContextMenu(null); }}
+          onUnequip={() => {
+            if (actions.unequip(contextMenu.slot)) setPickerSlot(null);
+            setContextMenu(null);
+          }}
         />
       )}
     </div>
