@@ -37,6 +37,10 @@ export function DashboardResearchCard(): JSX.Element | null {
 
   const openAcademy = (): void => {
     if (academy === undefined) return;
+    if (activeResearch === undefined && activeExpeditions.length > 0) {
+      navigation.openModule(UI_MODULE_IDS.island, "academy_expeditions");
+      return;
+    }
     islandSelection.selectBuilding(academy.plotId, academy.instanceId);
     navigation.openModule(UI_MODULE_IDS.island);
   };
