@@ -49,6 +49,12 @@ export const DASHBOARD_SECTION_DEFINITIONS: Readonly<Record<DashboardSectionId, 
     iconSrc: "/assets/ui/nav-production.png",
     className: "dashboard-card--production",
   },
+  "black-market-convoy": {
+    id: "black-market-convoy",
+    title: "Cargo Black Market",
+    iconSrc: "/assets/ui/nav-merchant.png",
+    className: "dashboard-card--black-market-convoy",
+  },
   player: {
     id: "player",
     title: "Personnage",
