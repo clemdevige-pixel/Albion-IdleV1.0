@@ -10,6 +10,8 @@ import "./WorldTowerView.css";
 
 interface TowerPresentationModel {
   readonly active: boolean;
+  readonly intermission: boolean;
+  readonly engaged: boolean;
   readonly pendingStart: boolean;
   readonly currentFloor: number;
   readonly highestClearedFloor: number;
@@ -22,6 +24,8 @@ interface TowerPresentationModel {
 
 function sameTowerPresentation(previous: TowerPresentationModel, next: TowerPresentationModel): boolean {
   return previous.active === next.active
+    && previous.intermission === next.intermission
+    && previous.engaged === next.engaged
     && previous.pendingStart === next.pendingStart
     && previous.currentFloor === next.currentFloor
     && previous.highestClearedFloor === next.highestClearedFloor
@@ -71,6 +75,8 @@ export function WorldTowerView(): JSX.Element {
     const tower = getTowerState();
     return {
       active: tower.active,
+      intermission: tower.intermission,
+      engaged: tower.engaged,
       pendingStart: tower.pendingStart,
       currentFloor: tower.progression.currentFloor,
       highestClearedFloor: tower.progression.highestClearedFloor,
@@ -116,7 +122,7 @@ export function WorldTowerView(): JSX.Element {
         <div><small>Endless</small><strong>{presentation.endlessUnlocked ? "Débloqué" : "Étage 25"}</strong></div>
       </section>
 
-      <article className={`world-tower__block${presentation.active ? " is-active" : ""}${presentation.pendingStart ? " is-pending" : ""}`}>
+      <article className={`world-tower__block${presentation.active ? " is-active" : ""}${presentation.intermission ? " is-intermission" : ""}${presentation.pendingStart ? " is-pending" : ""}`}>
         <header>
           <div>
             <small>Bloc {block.blockIndex + 1} · Étages {block.floorStart}–{block.floorEnd}</small>
@@ -131,7 +137,7 @@ export function WorldTowerView(): JSX.Element {
               aria-controls={rewardsId}
               onClick={() => { setRewardsOpen((open) => !open); }}
             >i</button>
-            <span>{presentation.active ? "En cours" : presentation.pendingStart ? "Après ce combat" : "Prêt"}</span>
+            <span>{presentation.active ? "En cours" : presentation.intermission ? "Préparation" : presentation.pendingStart ? "Après ce combat" : "Prêt"}</span>
           </div>
         </header>
 
@@ -181,12 +187,19 @@ export function WorldTowerView(): JSX.Element {
         <footer>
           <p>{presentation.active
             ? "Abandonner quitte la tentative et conserve la progression validée."
-            : presentation.pendingStart
-              ? "La Tour démarrera à la fin de l’ennemi actuel."
-              : accessMessage ?? "L’entrée peut attendre la fin du combat World en cours."}</p>
+            : presentation.intermission
+              ? accessMessage ?? "Préparez votre équipement avant de lancer le prochain bloc."
+              : presentation.pendingStart
+                ? "La Tour démarrera à la fin de l’ennemi actuel."
+                : accessMessage ?? "L’entrée peut attendre la fin du combat World en cours."}</p>
           {presentation.active ? (
             <button type="button" className="is-danger" onClick={() => { abandonTower(); }}>Abandonner</button>
-          ) : presentation.pendingStart ? null : (
+          ) : presentation.pendingStart ? null : presentation.intermission ? (
+            <div className="world-tower__intermission-actions">
+              <button type="button" className="is-danger" onClick={() => { abandonTower(); }}>Quitter la Tour</button>
+              <button type="button" disabled={!canStart} onClick={() => { startTower(); }}>Lancer le bloc</button>
+            </div>
+          ) : (
             <button type="button" disabled={!canStart} onClick={() => { startTower(); }}>Entrer</button>
           )}
         </footer>
@@ -200,7 +213,7 @@ export function WorldTowerView(): JSX.Element {
               key={checkpoint}
               type="button"
               className={checkpoint === presentation.checkpointFloor ? "is-active" : ""}
-              disabled={presentation.active || presentation.pendingStart}
+              disabled={presentation.engaged || presentation.pendingStart}
               onClick={() => { selectTowerCheckpoint(checkpoint); }}
             >
               Étage {checkpoint}
