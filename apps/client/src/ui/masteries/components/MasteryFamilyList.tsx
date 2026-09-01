@@ -117,8 +117,10 @@ function ChildMasteryRow({
 }): JSX.Element {
   const iconAsset = mastery.iconAsset ?? fallbackIconAsset;
   const [abilitiesOpen, setAbilitiesOpen] = useState(false);
+  const [bonusesOpen, setBonusesOpen] = useState(false);
   const abilityUnlocks = showAbilityInfo ? getWeaponAbilityUnlocksForMastery(mastery.id) : [];
   const canShowAbilities = abilityUnlocks.length > 0;
+  const canShowBonuses = mastery.bonuses.length > 0;
 
   return (
     <article className={`ui-mastery-specialization${mastery.isUnlocked ? "" : " is-locked"}`}>
@@ -138,6 +140,16 @@ function ChildMasteryRow({
             {mastery.subtitle !== undefined && <small>{mastery.subtitle}</small>}
           </div>
           <div className="ui-mastery-specialization__actions">
+            {canShowBonuses && (
+              <button
+                type="button"
+                className={`ui-mastery-specialization__details${bonusesOpen ? " is-active" : ""}`}
+                aria-expanded={bonusesOpen}
+                onClick={() => { setBonusesOpen((current) => !current); }}
+              >
+                Bonus
+              </button>
+            )}
             {canShowAbilities && (
               <button
                 type="button"
@@ -153,8 +165,8 @@ function ChildMasteryRow({
           </div>
         </div>
         <MasteryProgressBar mastery={mastery} />
+        {bonusesOpen && <BonusList bonuses={mastery.bonuses} />}
         {abilitiesOpen && <WeaponAbilityMenu mastery={mastery} />}
-        <BonusList bonuses={mastery.bonuses} />
       </div>
     </article>
   );
