@@ -51,6 +51,8 @@ export interface DungeonNavigationVM {
 
 export interface TowerNavigationVM {
   readonly active: boolean;
+  readonly intermission: boolean;
+  readonly engaged: boolean;
   readonly pendingStart: boolean;
   readonly progression: TowerProgressionSnapshot;
   readonly unlockedCheckpointFloors: readonly number[];
