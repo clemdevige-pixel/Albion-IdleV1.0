@@ -21,6 +21,7 @@ import {
   useDashboardZoneActions,
 } from "./useDashboardData";
 import { DashboardSortProvider } from "./DashboardSortContext";
+import { DashboardAttentionCard } from "./components/DashboardAttentionCard";
 import { DashboardCombatCard } from "./components/DashboardCombatCard";
 import { DashboardEnchantReadyCard } from "./components/DashboardEnchantReadyCard";
 import { DashboardProductionCard } from "./components/DashboardProductionCard";
@@ -49,11 +50,11 @@ export function DashboardModule(): JSX.Element {
     ),
     research: <DashboardResearchCard />,
     yield: <DashboardYieldCard yieldData={yieldData} />,
-    "enchant-ready": <DashboardEnchantReadyCard />,
     production: <DashboardProductionCard production={production} />,
   };
 
   const visibleOrder = sectionOrder.filter((sectionId) => {
+    if (sectionId === "enchant-ready") return false;
     const section = sections[sectionId];
     return section !== undefined && section !== null;
   });
@@ -102,15 +103,19 @@ export function DashboardModule(): JSX.Element {
   };
 
   return (
-    <DashboardSortProvider
-      value={{
-        beginDrag: handleDragStart,
-        endDrag: () => { setDraggedSectionId(null); },
-        handleKeyDown: handleHeaderKeyDown,
-      }}
-    >
-      <div className="dashboard-module">
+    <div className="dashboard-module">
+      <DashboardAttentionCard />
+      <DashboardEnchantReadyCard />
+
+      <DashboardSortProvider
+        value={{
+          beginDrag: handleDragStart,
+          endDrag: () => { setDraggedSectionId(null); },
+          handleKeyDown: handleHeaderKeyDown,
+        }}
+      >
         {sectionOrder.map((sectionId) => {
+          if (sectionId === "enchant-ready") return null;
           const section = sections[sectionId];
           if (section === undefined || section === null) return null;
           return (
@@ -127,7 +132,7 @@ export function DashboardModule(): JSX.Element {
             </div>
           );
         })}
-      </div>
-    </DashboardSortProvider>
+      </DashboardSortProvider>
+    </div>
   );
 }
