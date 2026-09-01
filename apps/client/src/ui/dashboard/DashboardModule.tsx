@@ -14,6 +14,7 @@ import {
 } from "../../data/dashboardLayoutCatalog";
 import { dashboardLayoutSaveProvider } from "../../runtime/DashboardLayoutSaveProvider";
 import { useGameServices } from "../../state/GameContext";
+import { usePlayerAttention } from "../attention/usePlayerAttention";
 import {
   useDashboardProduction,
   useDashboardYield,
@@ -28,8 +29,12 @@ import { DashboardProductionCard } from "./components/DashboardProductionCard";
 import { DashboardResearchCard } from "./components/DashboardResearchCard";
 import { DashboardYieldCard } from "./components/DashboardYieldCard";
 
+const ACTIVITY_SECTION_IDS = new Set<DashboardSectionId>(["combat", "research", "production"]);
+const YIELD_SECTION_IDS = new Set<DashboardSectionId>(["yield"]);
+
 export function DashboardModule(): JSX.Element {
   const { saveGame } = useGameServices();
+  const attention = usePlayerAttention();
   const zone = useDashboardZone();
   const zoneActions = useDashboardZoneActions();
   const production = useDashboardProduction();
@@ -58,6 +63,9 @@ export function DashboardModule(): JSX.Element {
     const section = sections[sectionId];
     return section !== undefined && section !== null;
   });
+  const activityOrder = visibleOrder.filter((sectionId) => ACTIVITY_SECTION_IDS.has(sectionId));
+  const yieldOrder = visibleOrder.filter((sectionId) => YIELD_SECTION_IDS.has(sectionId));
+  const hasPriorities = attention.signals.length > 0;
 
   const persistOrder = (nextOrder: readonly DashboardSectionId[]): void => {
     dashboardLayoutSaveProvider.setOrder(nextOrder);
@@ -102,10 +110,38 @@ export function DashboardModule(): JSX.Element {
     moveSection(sectionId, targetId);
   };
 
+  const renderSortableSection = (sectionId: DashboardSectionId): JSX.Element | null => {
+    const section = sections[sectionId];
+    if (section === undefined || section === null) return null;
+    return (
+      <div
+        key={sectionId}
+        className={`dashboard-sortable-section${draggedSectionId === sectionId ? " is-dragging" : ""}`}
+        onDragOver={(event) => {
+          event.preventDefault();
+          event.dataTransfer.dropEffect = "move";
+        }}
+        onDrop={(event) => { handleDrop(event, sectionId); }}
+      >
+        {section}
+      </div>
+    );
+  };
+
   return (
     <div className="dashboard-module">
-      <DashboardAttentionCard />
-      <DashboardEnchantReadyCard />
+      {hasPriorities && (
+        <section className="dashboard-group dashboard-group--priorities" aria-labelledby="dashboard-priorities-title">
+          <header className="dashboard-group__header">
+            <div>
+              <span>À surveiller</span>
+              <h2 id="dashboard-priorities-title">Priorités</h2>
+            </div>
+          </header>
+          <DashboardAttentionCard />
+          <DashboardEnchantReadyCard />
+        </section>
+      )}
 
       <DashboardSortProvider
         value={{
@@ -114,24 +150,33 @@ export function DashboardModule(): JSX.Element {
           handleKeyDown: handleHeaderKeyDown,
         }}
       >
-        {sectionOrder.map((sectionId) => {
-          if (sectionId === "enchant-ready") return null;
-          const section = sections[sectionId];
-          if (section === undefined || section === null) return null;
-          return (
-            <div
-              key={sectionId}
-              className={`dashboard-sortable-section${draggedSectionId === sectionId ? " is-dragging" : ""}`}
-              onDragOver={(event) => {
-                event.preventDefault();
-                event.dataTransfer.dropEffect = "move";
-              }}
-              onDrop={(event) => { handleDrop(event, sectionId); }}
-            >
-              {section}
+        {activityOrder.length > 0 && (
+          <section className="dashboard-group" aria-labelledby="dashboard-activity-title">
+            <header className="dashboard-group__header">
+              <div>
+                <span>Ce qui tourne</span>
+                <h2 id="dashboard-activity-title">Activité en cours</h2>
+              </div>
+            </header>
+            <div className="dashboard-group__content">
+              {activityOrder.map(renderSortableSection)}
             </div>
-          );
-        })}
+          </section>
+        )}
+
+        {yieldOrder.length > 0 && (
+          <section className="dashboard-group dashboard-group--passive" aria-labelledby="dashboard-yield-title">
+            <header className="dashboard-group__header">
+              <div>
+                <span>Lecture passive</span>
+                <h2 id="dashboard-yield-title">Rendement & suivi</h2>
+              </div>
+            </header>
+            <div className="dashboard-group__content">
+              {yieldOrder.map(renderSortableSection)}
+            </div>
+          </section>
+        )}
       </DashboardSortProvider>
     </div>
   );
