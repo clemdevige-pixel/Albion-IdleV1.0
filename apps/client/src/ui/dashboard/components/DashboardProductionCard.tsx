@@ -58,12 +58,14 @@ function getTaskIcon(task: DashboardProductionTask): string {
   return resource?.src ?? "/assets/ui/nav-production.png";
 }
 
-export function DashboardProductionCard({ production }: DashboardProductionCardProps): JSX.Element {
+export function DashboardProductionCard({ production }: DashboardProductionCardProps): JSX.Element | null {
   const actions = useDashboardGatheringActions();
   const bridge = useGameBridge();
   const navigation = useNavigation();
   const islandSelection = useIslandSelection();
   const interaction = production.gatheringInteraction;
+
+  if (production.tasks.length === 0 && interaction === undefined) return null;
 
   const getTaskBuilding = (task: DashboardProductionTask) => {
     if (task.kind === "worker") {
@@ -96,9 +98,7 @@ export function DashboardProductionCard({ production }: DashboardProductionCardP
       sectionId="production"
       meta={production.hiddenTaskCount > 0 ? `+${String(production.hiddenTaskCount)} autre${production.hiddenTaskCount > 1 ? "s" : ""}` : undefined}
     >
-      {production.tasks.length === 0 ? (
-        <p className="dashboard-empty">Aucune production active.</p>
-      ) : (
+      {production.tasks.length > 0 && (
         <div className="dashboard-production__list">
           {production.tasks.map((task) => {
             const targetBuilding = getTaskBuilding(task);
