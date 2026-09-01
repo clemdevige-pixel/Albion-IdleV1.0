@@ -1,6 +1,3 @@
-import { combatStopController } from "./CombatStopController.js";
-import { worldTravelTransition } from "./WorldTravelTransition.js";
-
 export interface TowerBlockCompletionRecapModel {
   readonly id: number;
   readonly blockIndex: number;
@@ -44,14 +41,6 @@ class TowerBlockCompletionFlow {
     if (this.#recap === null) return;
     this.#recap = null;
     this.#notify();
-  }
-
-  resumeWorldExploration(): boolean {
-    if (this.#recap === null || !combatStopController.resume()) return false;
-    this.#recap = null;
-    worldTravelTransition.start();
-    this.#notify();
-    return true;
   }
 
   #notify(): void {
