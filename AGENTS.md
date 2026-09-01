@@ -12,6 +12,7 @@ Hero weapon spritesheet integration contract:
 
 - `packages/data` owns authored static gameplay truth: balance, costs, rates, tier tables, canonical IDs/mappings, authored recipes and unlock graphs.
 - `packages/gameplay` owns domain rules, calculations, validation, transactions and state transitions.
+- `packages/shared` owns transport-agnostic contracts/DTOs and technical constants shared by client/server; it must not absorb gameplay/data/runtime ownership.
 - `apps/client` owns React/Phaser presentation, adapters, bootstrapping and client orchestration.
 - Do not introduce React/Phaser/runtime state into `packages/data`.
 - Do not duplicate authored values across client/gameplay/server.
@@ -32,11 +33,13 @@ Hero weapon spritesheet integration contract:
 `pnpm lint` also runs `pnpm validate:architecture`.
 
 The executable guard currently enforces the existing dependency direction:
+- `packages/shared` must remain transport-agnostic and must not depend on other `@game/*` domain/app packages or React/Phaser/Fastify.
 - `packages/core` must not depend on other `@game/*` packages or React/Phaser/Fastify.
 - `packages/data` must not depend on core/persistence/gameplay or React/Phaser/Fastify.
 - `packages/persistence` must not depend on data/gameplay or React/Phaser/Fastify.
 - `packages/gameplay` must remain independent from React/Phaser/Fastify and app-layer source files.
 - Low-level packages must not escape through relative imports into `apps/client` or `apps/server`.
+- `apps/client` and `apps/server` must not import or depend on each other directly; shared contracts belong in the appropriate `packages/*` boundary.
 
 Do not disable or bypass these guards to make a feature compile. If a future architecture decision genuinely changes a boundary, update the documented contract and the guard together.
 
@@ -46,6 +49,7 @@ Do not disable or bypass these guards to make a feature compile. If a future arc
 - Tests remain covered by typecheck/test.
 - General CI must continue running on `main` and the active integration branch `agent/albion-idle-development` while it remains active.
 - Do not hardcode a second client build version in persistence/runtime; `apps/client/package.json` is the current version source.
+- Local development must not target the production Render API by default. Cloud/backend E2E testing must opt in through a local ignored environment override or deployed environment configuration.
 
 ## Standard validation after architecture/data changes
 
@@ -59,6 +63,6 @@ Run `validate:data` / `validate:assets` as well when those contracts are affecte
 
 - P0 infrastructure audit fixes: CLOSED.
 - P1 authored-data ownership cleanup: CLOSED and validated green on 2026-08-25.
-- P3 persistence audit: existing architecture considered mature; no immediate refactor required before a persistent cloud backend is chosen.
-- P6 architecture/quality guardrails: IN PROGRESS; executable package-boundary validation is now mandatory through `pnpm lint`.
-- P2 server-authority migration remains deferred until a robust persistent server/backend is available.
+- P3 persistence / cloud backend for current beta scope: CLOSED; Render API and PostgreSQL/Supabase persistence are integrated, with local fallback and account-save migration safeguards.
+- P6 architecture/quality guardrails: IN PROGRESS pending final green validation; shared-package and client/server cross-app boundaries are now executable guards through `pnpm lint`.
+- P2 broader server-authority migration remains deferred; do not move gameplay authority server-side as a big-bang rewrite.
