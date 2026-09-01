@@ -134,7 +134,11 @@ describe("Academy research content", () => {
     expect(analysis?.durationMs).toBe(10 * 60 * 1000);
     expect(analysis?.cost).toEqual({ silver: 10_000, materials: [] });
     expect(analysis?.requirements).toContainEqual({ type: "academy_tier", minimumTier: 4 });
-    expect(analysis?.requirements).toContainEqual({ type: "relic_charged", relicId: DUNGEON_RELIC_ID });
+    expect(analysis?.requirements).toContainEqual({
+      type: "relic_charged",
+      relicId: DUNGEON_RELIC_ID,
+      consumeOnStart: true,
+    });
     expect(analysis?.unlockIds).toEqual([
       RESEARCH_UNLOCK_IDS.dungeonRelicAnalyzed,
       RESEARCH_UNLOCK_IDS.dungeonSystem,
