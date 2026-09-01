@@ -8,6 +8,7 @@ export function ActivityResultPopup({
   badge,
   summary,
   tone = "success",
+  className,
   children,
   footer,
 }: {
@@ -16,13 +17,14 @@ export function ActivityResultPopup({
   readonly badge: string;
   readonly summary: ReactNode;
   readonly tone?: "success" | "failure";
+  readonly className?: string;
   readonly children?: ReactNode;
   readonly footer: ReactNode;
 }): JSX.Element {
   return (
     <div className="expedition-recap-backdrop dungeon-recap-backdrop" role="presentation">
       <section
-        className={`expedition-recap dungeon-recap activity-result activity-result--${tone}`}
+        className={`expedition-recap dungeon-recap activity-result activity-result--${tone}${className === undefined ? "" : ` ${className}`}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
