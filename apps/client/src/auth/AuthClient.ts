@@ -15,8 +15,10 @@ import {
   type LoginRequest,
   type RegisterRequest,
 } from "@game/shared";
+import { fetchWithTimeout } from "../runtime/fetchWithTimeout";
 
 const API_ORIGIN = (import.meta.env.VITE_API_ORIGIN as string | undefined)?.replace(/\/$/, "") ?? "";
+const AUTH_REQUEST_TIMEOUT_MS = 60_000;
 
 async function parseResponse(response: Response): Promise<unknown> {
   if (response.status === 204) return undefined;
@@ -32,7 +34,11 @@ export class AuthClient {
   private endpoint(path: string): string { return `${API_ORIGIN}${path}`; }
 
   public async providers(): Promise<AuthProviders> {
-    return AuthProvidersSchema.parse(await parseResponse(await fetch(this.endpoint(AUTH_PROVIDERS_ROUTE))));
+    return AuthProvidersSchema.parse(await parseResponse(await fetchWithTimeout(
+      this.endpoint(AUTH_PROVIDERS_ROUTE),
+      {},
+      AUTH_REQUEST_TIMEOUT_MS,
+    )));
   }
 
   public async register(input: RegisterRequest): Promise<AuthSession> {
@@ -44,7 +50,11 @@ export class AuthClient {
   }
 
   public async restore(token: string): Promise<AuthSession["account"]> {
-    const response = await fetch(this.endpoint(AUTH_SESSION_ROUTE), { headers: { authorization: `Bearer ${token}` } });
+    const response = await fetchWithTimeout(
+      this.endpoint(AUTH_SESSION_ROUTE),
+      { headers: { authorization: `Bearer ${token}` } },
+      AUTH_REQUEST_TIMEOUT_MS,
+    );
     const payload = await parseResponse(response) as { account?: unknown };
     return AccountSchema.parse(payload.account);
   }
@@ -54,10 +64,10 @@ export class AuthClient {
   }
 
   public async logout(token: string): Promise<void> {
-    await parseResponse(await fetch(this.endpoint(AUTH_LOGOUT_ROUTE), {
+    await parseResponse(await fetchWithTimeout(this.endpoint(AUTH_LOGOUT_ROUTE), {
       method: "POST",
       headers: { authorization: `Bearer ${token}` },
-    }));
+    }, AUTH_REQUEST_TIMEOUT_MS));
   }
 
   public discordAuthorizationUrl(): string {
@@ -67,11 +77,11 @@ export class AuthClient {
   }
 
   private async postSession(path: string, body: unknown): Promise<AuthSession> {
-    const response = await fetch(this.endpoint(path), {
+    const response = await fetchWithTimeout(this.endpoint(path), {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(body),
-    });
+    }, AUTH_REQUEST_TIMEOUT_MS);
     return AuthSessionSchema.parse(await parseResponse(response));
   }
 }
