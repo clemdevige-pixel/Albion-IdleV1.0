@@ -389,3 +389,17 @@
   font-size: 8px;
   line-height: 1.3;
 }
+
+@media (max-width: 920px) {
+  .ui-world .ui-gathering-card__cycle-focus {
+    grid-template-columns: 70px minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .ui-world .ui-gathering-card .active-gathering {
+    grid-template-columns: minmax(0, 1fr) 70px;
+    gap: 4px 8px;
+  }
+
+  .ui-world .ui-gathering-card .active-gathering__strike { min-width: 70px; }
+}
