@@ -24,14 +24,22 @@ import {
 } from "./useDashboardData";
 import { DashboardSortProvider } from "./DashboardSortContext";
 import { DashboardAttentionCard } from "./components/DashboardAttentionCard";
+import {
+  DashboardBlackMarketConvoyCard,
+  useDashboardBlackMarketConvoy,
+} from "./components/DashboardBlackMarketConvoyCard";
 import { DashboardCombatCard } from "./components/DashboardCombatCard";
 import { DashboardEnchantReadyCard } from "./components/DashboardEnchantReadyCard";
 import { DashboardProductionCard } from "./components/DashboardProductionCard";
 import { DashboardResearchCard } from "./components/DashboardResearchCard";
 import { DashboardYieldCard } from "./components/DashboardYieldCard";
 
-const ACTIVITY_SECTION_IDS = new Set<DashboardSectionId>(["combat", "research", "production"]);
-const YIELD_SECTION_IDS = new Set<DashboardSectionId>(["yield"]);
+const ACTIVITY_SECTION_IDS = new Set<DashboardSectionId>(["combat", "research"]);
+const YIELD_SECTION_IDS = new Set<DashboardSectionId>([
+  "yield",
+  "production",
+  "black-market-convoy",
+]);
 
 type DashboardGroupId = "activity" | "yield";
 
@@ -48,6 +56,7 @@ export function DashboardModule(): JSX.Element {
   const zoneActions = useDashboardZoneActions();
   const production = useDashboardProduction();
   const yieldData = useDashboardYield();
+  const blackMarketConvoy = useDashboardBlackMarketConvoy();
   const academyModel = getAcademyModel();
   const hasResearchActivity = academyModel.research.some((entry) => entry.state === "active")
     || academyModel.expeditions.some((entry) => entry.active);
@@ -69,6 +78,9 @@ export function DashboardModule(): JSX.Element {
     research: hasResearchActivity ? <DashboardResearchCard /> : null,
     yield: <DashboardYieldCard yieldData={yieldData} />,
     production: hasProductionActivity ? <DashboardProductionCard production={production} /> : null,
+    "black-market-convoy": blackMarketConvoy === null
+      ? null
+      : <DashboardBlackMarketConvoyCard model={blackMarketConvoy} />,
   };
 
   const visibleOrder = sectionOrder.filter((sectionId) => {
@@ -148,10 +160,7 @@ export function DashboardModule(): JSX.Element {
       {hasPriorities && (
         <section className="dashboard-group dashboard-group--priorities" aria-labelledby="dashboard-priorities-title">
           <header className="dashboard-group__header">
-            <div>
-              <span>À surveiller</span>
-              <h2 id="dashboard-priorities-title">Priorités</h2>
-            </div>
+            <h2 id="dashboard-priorities-title">Priorités</h2>
           </header>
           <DashboardAttentionCard />
           <DashboardEnchantReadyCard />
@@ -168,10 +177,7 @@ export function DashboardModule(): JSX.Element {
         {activityOrder.length > 0 && (
           <section className="dashboard-group" aria-labelledby="dashboard-activity-title">
             <header className="dashboard-group__header">
-              <div>
-                <span>Ce qui tourne</span>
-                <h2 id="dashboard-activity-title">Activité en cours</h2>
-              </div>
+              <h2 id="dashboard-activity-title">Activité en cours</h2>
             </header>
             <div className="dashboard-group__content">
               {activityOrder.map(renderSortableSection)}
@@ -182,10 +188,7 @@ export function DashboardModule(): JSX.Element {
         {yieldOrder.length > 0 && (
           <section className="dashboard-group dashboard-group--passive" aria-labelledby="dashboard-yield-title">
             <header className="dashboard-group__header">
-              <div>
-                <span>Lecture passive</span>
-                <h2 id="dashboard-yield-title">Rendement & suivi</h2>
-              </div>
+              <h2 id="dashboard-yield-title">Rendement & suivi</h2>
             </header>
             <div className="dashboard-group__content">
               {yieldOrder.map(renderSortableSection)}
