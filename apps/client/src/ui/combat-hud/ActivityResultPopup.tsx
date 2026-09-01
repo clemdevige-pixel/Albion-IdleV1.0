@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import "./activityResult.css";
 
 export function ActivityResultPopup({
   title,
