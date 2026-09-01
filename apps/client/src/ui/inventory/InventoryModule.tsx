@@ -8,7 +8,13 @@ import { ItemContextMenu } from "../../panels/ItemContextMenu";
 import { getItemDisplayName } from "../../panels/ItemVisual";
 import type { StorageRange } from "../../runtime/StorageRuntime";
 import { useGameServices } from "../../state/GameContext";
-import { FEATURE_UNLOCK_VISITS, useFeatureUnlockVisit } from "../attention/usePlayerAttention";
+import { FeatureAttentionBadge } from "../attention/FeatureAttentionBadge";
+import {
+  acknowledgeFeatureUnlocks,
+  FEATURE_UNLOCK_VISITS,
+  useFeatureUnlockPending,
+  useFeatureUnlockVisit,
+} from "../attention/usePlayerAttention";
 import { BankModule } from "../bank";
 import {
   createTrackedItemResource,
@@ -74,14 +80,10 @@ export function InventoryModule(): JSX.Element {
   const [activeTab, setActiveTab] = useState<StorageTab>("inventory");
   const [activeFilter, setActiveFilter] = useState<InventoryFilter>("all");
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
+  const bankUnlockCount = useFeatureUnlockPending(FEATURE_UNLOCK_VISITS.bank);
+  const yieldTrackingUnlockCount = useFeatureUnlockPending(FEATURE_UNLOCK_VISITS.resourceYieldTracking);
 
-  useFeatureUnlockVisit(
-    activeTab === "bank"
-      ? FEATURE_UNLOCK_VISITS.bank
-      : activeFilter === "resources"
-        ? FEATURE_UNLOCK_VISITS.resourceYieldTracking
-        : [],
-  );
+  useFeatureUnlockVisit(activeTab === "bank" ? FEATURE_UNLOCK_VISITS.bank : []);
 
   const capacityRatio = inventory.capacity === 0
     ? 0
@@ -155,6 +157,7 @@ export function InventoryModule(): JSX.Element {
         </button>
         <button type="button" role="tab" aria-selected={activeTab === "bank"} className={activeTab === "bank" ? "is-active" : ""} onClick={() => { setActiveTab("bank"); setContextMenu(null); }}>
           Banque
+          <FeatureAttentionBadge count={bankUnlockCount} />
         </button>
       </div>
 
@@ -192,6 +195,7 @@ export function InventoryModule(): JSX.Element {
                   onClick={() => { handleFilterChange(filter.id); }}
                 >
                   {filter.label}
+                  {filter.id === "resources" && <FeatureAttentionBadge count={yieldTrackingUnlockCount} />}
                 </button>
               ))}
             </div>
@@ -213,6 +217,7 @@ export function InventoryModule(): JSX.Element {
                   isItemFavorite: tracking.isTracked,
                   onToggleItemFavorite: (itemId: string) => {
                     tracking.toggleTracked(createTrackedItemResource(itemId, getItemDisplayName(itemId)));
+                    acknowledgeFeatureUnlocks(FEATURE_UNLOCK_VISITS.resourceYieldTracking);
                   },
                 } : {})}
               />
