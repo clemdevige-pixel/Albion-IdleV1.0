@@ -3,6 +3,7 @@ import type { EquipmentLoadout, EquipmentSlot } from "@game/gameplay";
 import { getItemTier } from "../../data/itemPower";
 import { resolveEquipmentInfo } from "../../data/itemContentCatalog";
 import { ItemContextMenu } from "../../panels/ItemContextMenu";
+import { ContextHoverTooltip } from "../shared/ContextHoverTooltip";
 import { ItemSlot } from "../shared/ItemSlot";
 import { getCroppedHeroIdleFrame, type CroppedHeroIdleFrame } from "./characterIdleFrameCrop";
 import {
@@ -307,7 +308,19 @@ export function CharacterModule(): JSX.Element {
       <section className="character-module__stats" aria-label="Statistiques de combat">
         <article className="character-module__stat-card character-module__stat-card--ip">
           <img src="/assets/ui/ip.png" alt="" aria-hidden="true" draggable={false} />
-          <div><span>Item Power</span><strong>{formatValue(character.itemPower)}</strong></div>
+          <div>
+            <ContextHoverTooltip
+              tooltip={(
+                <div className="context-tooltip-content">
+                  <div className="context-tooltip-content__header"><strong>Item Power</strong></div>
+                  <div className="context-tooltip-content__body">Représente la puissance globale fournie par ton équipement.</div>
+                </div>
+              )}
+            >
+              <span>Item Power</span>
+            </ContextHoverTooltip>
+            <strong>{formatValue(character.itemPower)}</strong>
+          </div>
         </article>
         <article className="character-module__stat-card">
           <img src="/assets/ui/health.png" alt="" aria-hidden="true" draggable={false} />
