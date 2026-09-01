@@ -306,9 +306,9 @@ Status: **TRAITÉ + IMPLÉMENTÉ** for current placement/right-click behavior; f
 
 ## P2.1 — Inventory / Bank / Equipment targeted polish
 
-Status: **EN COURS D’IMPLÉMENTATION**
+Status: **À FAIRE**
 
-Validated scope:
+Validated implementation scope:
 
 - centralize Inventory / Bank item categorization through one shared UI resolver derived from existing authoritative catalogs;
 - add local visual feedback for near-full / full Inventory and Bank capacity without creating new runtime state;
@@ -406,4 +406,4 @@ Validated completed phases:
 
 Current resume point:
 
-> **P2.1 — Inventory / Bank / Equipment targeted polish (implementation in progress)**
+> **P2.1 — Inventory / Bank / Equipment targeted polish**
