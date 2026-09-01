@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { TowerProgressionService } from "@game/gameplay";
 import { activityFailureFlow } from "./ActivityFailureFlow.js";
+import { towerBlockCompletionFlow } from "./TowerBlockCompletionFlow.js";
 import { TowerCombatEncounterSource } from "./TowerCombatEncounterSource.js";
 import {
   TowerCombatRuntimeRouter,
@@ -22,7 +23,10 @@ function createRouter(blockTransitionPort?: TowerBlockTransitionPort): {
   };
 }
 
-afterEach(() => { activityFailureFlow.dismiss(); });
+afterEach(() => {
+  activityFailureFlow.dismiss();
+  towerBlockCompletionFlow.dismiss();
+});
 
 describe("TowerCombatRuntimeRouter", () => {
   it("falls through while Tower is inactive", () => {
@@ -54,7 +58,7 @@ describe("TowerCombatRuntimeRouter", () => {
     expect(router.getEncounterIndex(4)).toBe(1);
   });
 
-  it("closes the attempt and requests a pause after a completed block", () => {
+  it("closes the attempt, exposes the next block and requests a pause after a completed block", () => {
     const requestPauseAfterEncounter = vi.fn(() => true);
     const { progression, router } = createRouter({ requestPauseAfterEncounter });
     expect(router.start()).toBe(true);
@@ -73,10 +77,17 @@ describe("TowerCombatRuntimeRouter", () => {
       highestClearedFloor: 5,
       checkpointFloor: 6,
     });
+    expect(towerBlockCompletionFlow.getSnapshot()).toMatchObject({
+      floorStart: 1,
+      floorEnd: 5,
+      checkpointFloor: 6,
+      nextFloor: 6,
+      unlockedEndlessNow: false,
+    });
     expect(requestPauseAfterEncounter).toHaveBeenCalledTimes(1);
   });
 
-  it("unlocks Endless and closes the trial attempt after floor 25", () => {
+  it("unlocks Endless and marks the major milestone after floor 25", () => {
     const requestPauseAfterEncounter = vi.fn(() => true);
     const { progression, router } = createRouter({ requestPauseAfterEncounter });
     for (let floor = 1; floor <= 24; floor += 1) progression.clearCurrentFloor(floor);
@@ -89,6 +100,13 @@ describe("TowerCombatRuntimeRouter", () => {
       highestClearedFloor: 25,
       checkpointFloor: 26,
       endlessUnlocked: true,
+    });
+    expect(towerBlockCompletionFlow.getSnapshot()).toMatchObject({
+      floorEnd: 25,
+      nextFloor: 26,
+      checkpointFloor: 26,
+      endlessUnlocked: true,
+      unlockedEndlessNow: true,
     });
     expect(requestPauseAfterEncounter).toHaveBeenCalledTimes(1);
   });
