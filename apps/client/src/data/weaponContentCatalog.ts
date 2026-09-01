@@ -11,6 +11,7 @@ import {
   type AuthoredWeaponCraftRule,
   type AuthoredWeaponFamilyId,
   type AuthoredWeaponItemContent,
+  type AuthoredWeaponSpecializationContent,
 } from "@game/data";
 import {
   asMasteryId,
@@ -39,47 +40,17 @@ export type WeaponCraftRule = AuthoredWeaponCraftRule;
 
 const ABILITIES = STANDARD_WEAPON_ABILITIES satisfies Readonly<Record<string, ClientAbilityDefinition>>;
 
+function familyAbilities(familyId: AuthoredWeaponFamilyId): readonly [ClientAbilityDefinition, ClientAbilityDefinition] {
+  const [first, second] = STANDARD_WEAPON_FAMILIES[familyId].sharedAbilityKeys;
+  return [ABILITIES[first], ABILITIES[second]];
+}
+
 export const WEAPON_FAMILIES = {
-  sword: {
-    masteryId: STANDARD_WEAPON_FAMILIES.sword.masteryId,
-    name: STANDARD_WEAPON_FAMILIES.sword.name,
-    sharedAbilities: [
-      ABILITIES[STANDARD_WEAPON_FAMILIES.sword.sharedAbilityKeys[0]],
-      ABILITIES[STANDARD_WEAPON_FAMILIES.sword.sharedAbilityKeys[1]],
-    ],
-  },
-  bow: {
-    masteryId: STANDARD_WEAPON_FAMILIES.bow.masteryId,
-    name: STANDARD_WEAPON_FAMILIES.bow.name,
-    sharedAbilities: [
-      ABILITIES[STANDARD_WEAPON_FAMILIES.bow.sharedAbilityKeys[0]],
-      ABILITIES[STANDARD_WEAPON_FAMILIES.bow.sharedAbilityKeys[1]],
-    ],
-  },
-  fire_staff: {
-    masteryId: STANDARD_WEAPON_FAMILIES.fire_staff.masteryId,
-    name: STANDARD_WEAPON_FAMILIES.fire_staff.name,
-    sharedAbilities: [
-      ABILITIES[STANDARD_WEAPON_FAMILIES.fire_staff.sharedAbilityKeys[0]],
-      ABILITIES[STANDARD_WEAPON_FAMILIES.fire_staff.sharedAbilityKeys[1]],
-    ],
-  },
-  gloves: {
-    masteryId: STANDARD_WEAPON_FAMILIES.gloves.masteryId,
-    name: STANDARD_WEAPON_FAMILIES.gloves.name,
-    sharedAbilities: [
-      ABILITIES[STANDARD_WEAPON_FAMILIES.gloves.sharedAbilityKeys[0]],
-      ABILITIES[STANDARD_WEAPON_FAMILIES.gloves.sharedAbilityKeys[1]],
-    ],
-  },
-  dagger: {
-    masteryId: STANDARD_WEAPON_FAMILIES.dagger.masteryId,
-    name: STANDARD_WEAPON_FAMILIES.dagger.name,
-    sharedAbilities: [
-      ABILITIES[STANDARD_WEAPON_FAMILIES.dagger.sharedAbilityKeys[0]],
-      ABILITIES[STANDARD_WEAPON_FAMILIES.dagger.sharedAbilityKeys[1]],
-    ],
-  },
+  sword: { masteryId: STANDARD_WEAPON_FAMILIES.sword.masteryId, name: STANDARD_WEAPON_FAMILIES.sword.name, sharedAbilities: familyAbilities("sword") },
+  bow: { masteryId: STANDARD_WEAPON_FAMILIES.bow.masteryId, name: STANDARD_WEAPON_FAMILIES.bow.name, sharedAbilities: familyAbilities("bow") },
+  fire_staff: { masteryId: STANDARD_WEAPON_FAMILIES.fire_staff.masteryId, name: STANDARD_WEAPON_FAMILIES.fire_staff.name, sharedAbilities: familyAbilities("fire_staff") },
+  gloves: { masteryId: STANDARD_WEAPON_FAMILIES.gloves.masteryId, name: STANDARD_WEAPON_FAMILIES.gloves.name, sharedAbilities: familyAbilities("gloves") },
+  dagger: { masteryId: STANDARD_WEAPON_FAMILIES.dagger.masteryId, name: STANDARD_WEAPON_FAMILIES.dagger.name, sharedAbilities: familyAbilities("dagger") },
 } as const;
 export type WeaponFamilyId = AuthoredWeaponFamilyId;
 type WeaponItemContent = AuthoredWeaponItemContent;
@@ -99,42 +70,17 @@ interface WeaponSpecializationContent {
 }
 
 const STANDARD_WEAPON_PRESENTATION: Readonly<Record<string, WeaponPresentationContent>> = {
-  mastery_broadsword: {
-    itemIcon: "item-broadsword-pixel-v1.png",
-    actorManifestId: "hero_broadsword",
-    combatProfileId: "melee",
-  },
-  mastery_longbow: {
-    itemIcon: "item-longbow-pixel-v1.png",
-    actorManifestId: "hero_longbow",
-    combatProfileId: "projectile",
-    combatPresentation: { kind: "projectile", projectileId: "arrow", releaseDelayMs: 355 },
-  },
-  mastery_badon: {
-    itemIcon: "item-badon-pixel-v1.png",
-    actorManifestId: "hero_bow",
-    combatProfileId: "projectile",
-    combatPresentation: { kind: "projectile", projectileId: "badon_arrow", releaseDelayMs: 355 },
-  },
-  mastery_infernal_staff: {
-    itemIcon: "item-fire-staff-pixel-v1.png",
-    actorManifestId: "hero_fire_staff",
-    combatProfileId: "projectile",
-    combatPresentation: { kind: "projectile", projectileId: "fireball", releaseDelayMs: 355 },
-  },
-  mastery_spiked_gauntlets: {
-    itemIcon: "item-spiked-gauntlets-pixel-v1.png",
-    actorManifestId: "hero_spiked_gauntlets",
-    combatProfileId: "melee",
-  },
-  mastery_dagger_pair: {
-    itemIcon: "item-dagger-pair-pixel-v1.png",
-    actorManifestId: "hero_dagger_pair",
-    combatProfileId: "melee",
-  },
+  mastery_broadsword: { itemIcon: "item-broadsword-pixel-v1.png", actorManifestId: "hero_broadsword", combatProfileId: "melee" },
+  mastery_longbow: { itemIcon: "item-longbow-pixel-v1.png", actorManifestId: "hero_longbow", combatProfileId: "projectile", combatPresentation: { kind: "projectile", projectileId: "arrow", releaseDelayMs: 355 } },
+  mastery_badon: { itemIcon: "item-badon-pixel-v1.png", actorManifestId: "hero_bow", combatProfileId: "projectile", combatPresentation: { kind: "projectile", projectileId: "badon_arrow", releaseDelayMs: 355 } },
+  mastery_infernal_staff: { itemIcon: "item-fire-staff-pixel-v1.png", actorManifestId: "hero_fire_staff", combatProfileId: "projectile", combatPresentation: { kind: "projectile", projectileId: "fireball", releaseDelayMs: 355 } },
+  mastery_spiked_gauntlets: { itemIcon: "item-spiked-gauntlets-pixel-v1.png", actorManifestId: "hero_spiked_gauntlets", combatProfileId: "melee" },
+  mastery_dagger_pair: { itemIcon: "item-dagger-pair-pixel-v1.png", actorManifestId: "hero_dagger_pair", combatProfileId: "melee" },
 };
 
-function importStandardSpecialization(entry: (typeof STANDARD_WEAPON_CONTENT)[number]): WeaponSpecializationContent {
+const STANDARD_WEAPON_ENTRIES: readonly AuthoredWeaponSpecializationContent[] = STANDARD_WEAPON_CONTENT;
+
+function importStandardSpecialization(entry: AuthoredWeaponSpecializationContent): WeaponSpecializationContent {
   const presentation = STANDARD_WEAPON_PRESENTATION[entry.specializationMasteryId];
   return {
     familyId: entry.familyId,
@@ -165,7 +111,7 @@ function importArtifactSpecialization(entry: FactionArtifactWeaponSpecialization
 }
 
 const WEAPON_CONTENT: readonly WeaponSpecializationContent[] = [
-  ...STANDARD_WEAPON_CONTENT.map(importStandardSpecialization),
+  ...STANDARD_WEAPON_ENTRIES.map(importStandardSpecialization),
   ...FACTION_ARTIFACT_WEAPON_CONTENT.map(importArtifactSpecialization),
 ];
 
@@ -190,12 +136,11 @@ export function resolveWeaponAbilityUnlocks(itemId: string | null | undefined): 
   if (itemId == null) return [];
   const specialization = CONTENT_BY_ITEM_ID.get(itemId)?.specialization;
   if (specialization === undefined) return [];
-  const family = WEAPON_FAMILIES[specialization.familyId];
-  const [q, w] = family.sharedAbilities;
+  const [q, w] = WEAPON_FAMILIES[specialization.familyId].sharedAbilities;
   return [
-    ...(q === undefined ? [] : [{ unlockMasteryLevel: 1, source: "family" as const, ability: q }]),
-    ...(w === undefined ? [] : [{ unlockMasteryLevel: 10, source: "family" as const, ability: w }]),
-    { unlockMasteryLevel: 30, source: "specialization" as const, ability: specialization.signatureAbility },
+    { unlockMasteryLevel: 1, source: "family", ability: q },
+    { unlockMasteryLevel: 10, source: "family", ability: w },
+    { unlockMasteryLevel: 30, source: "specialization", ability: specialization.signatureAbility },
   ];
 }
 export function resolveUnlockedWeaponAbilities(itemId: string | null | undefined, specializationMasteryLevel: number): readonly ClientAbilityDefinition[] {
