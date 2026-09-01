@@ -3,8 +3,7 @@ import type { TowerBlockCompletionRecapModel } from "../../runtime/TowerBlockCom
 import { towerBlockCompletionFlow } from "../../runtime/TowerBlockCompletionFlow.js";
 import type { TowerAccessState } from "../../state/TowerNavigationActions.js";
 import { useGameServices } from "../../state/GameContext.js";
-import { UI_MODULE_IDS } from "../navigation/moduleIds.js";
-import { useNavigation } from "../navigation/useNavigation.js";
+import { CharacterEquipmentPanel } from "../character/components/CharacterEquipmentPanel.js";
 import { ActivityResultPopup } from "./ActivityResultPopup.js";
 
 function formatNumber(value: number): string {
@@ -32,7 +31,6 @@ export function TowerBlockRecapPopup({
   readonly recap: TowerBlockCompletionRecapModel;
 }): JSX.Element {
   const services = useGameServices();
-  const navigation = useNavigation();
   const access = services.getTowerState().access;
   const completedFaction = factionName(recap.factionId);
   const nextFaction = factionName(recap.nextFactionId);
@@ -44,6 +42,7 @@ export function TowerBlockRecapPopup({
       title={recap.unlockedEndlessNow ? "Palier majeur terminé" : "Bloc terminé"}
       titleId="tower-block-recap-title"
       badge={`T${String(recap.tier)}`}
+      className="activity-result--tower-block"
       summary={(
         <>
           <strong>{completedFaction}</strong>
@@ -52,16 +51,6 @@ export function TowerBlockRecapPopup({
       )}
       footer={(
         <>
-          <button
-            type="button"
-            className="dungeon-recap__action dungeon-recap__action--secondary"
-            onClick={() => {
-              towerBlockCompletionFlow.dismiss();
-              navigation.openModule(UI_MODULE_IDS.character);
-            }}
-          >
-            Adapter mon équipement
-          </button>
           <button
             type="button"
             className="dungeon-recap__action dungeon-recap__action--primary"
@@ -85,30 +74,38 @@ export function TowerBlockRecapPopup({
         </>
       )}
     >
-      {recap.unlockedEndlessNow ? (
-        <div className="tower-block-recap__milestone">
-          <strong>Endless débloqué</strong>
-          <span>La Tour continue désormais au-delà de l’étage 25.</span>
-        </div>
-      ) : null}
+      <div className="tower-block-recap__layout">
+        <div className="tower-block-recap__summary-column">
+          {recap.unlockedEndlessNow ? (
+            <div className="tower-block-recap__milestone">
+              <strong>Endless débloqué</strong>
+              <span>La Tour continue désormais au-delà de l’étage 25.</span>
+            </div>
+          ) : null}
 
-      <section className="tower-block-recap__rewards" aria-label="Récompenses de fin de bloc">
-        <h3>Récompenses du bloc</h3>
-        <div><span>Étage final</span><strong>+{formatNumber(recap.finalFloorSilver)} Silver</strong></div>
-        <div><span>Coffre de bloc</span><strong>+{formatNumber(recap.repeatableBlockChestSilver)} Silver</strong></div>
-        {hasFirstClearBonus ? <div><span>Première validation</span><strong>+{formatNumber(recap.firstClearBlockBonusSilver)} Silver</strong></div> : null}
-        {hasMajorBossBonus ? <div><span>Boss majeur</span><strong>+{formatNumber(recap.majorBossFirstClearBonusSilver)} Silver</strong></div> : null}
-        <small>Nouveau checkpoint · étage {recap.checkpointFloor}</small>
-      </section>
+          <section className="tower-block-recap__rewards" aria-label="Récompenses de fin de bloc">
+            <h3>Récompenses du bloc</h3>
+            <div><span>Étage final</span><strong>+{formatNumber(recap.finalFloorSilver)} Silver</strong></div>
+            <div><span>Coffre de bloc</span><strong>+{formatNumber(recap.repeatableBlockChestSilver)} Silver</strong></div>
+            {hasFirstClearBonus ? <div><span>Première validation</span><strong>+{formatNumber(recap.firstClearBlockBonusSilver)} Silver</strong></div> : null}
+            {hasMajorBossBonus ? <div><span>Boss majeur</span><strong>+{formatNumber(recap.majorBossFirstClearBonusSilver)} Silver</strong></div> : null}
+            <small>Nouveau checkpoint · étage {recap.checkpointFloor}</small>
+          </section>
 
-      <section className="tower-block-recap__next" aria-label="Prochain bloc">
-        <header><small>PROCHAIN BLOC</small><strong>T{recap.nextTier} · {nextFaction}</strong></header>
-        <div className="tower-block-recap__next-grid">
-          <span><small>Départ</small><strong>Étage {recap.nextFloor}</strong></span>
-          <span><small>Équipement</small><strong>T{access.requiredTier} max</strong></span>
+          <section className="tower-block-recap__next" aria-label="Prochain bloc">
+            <header><small>PROCHAIN BLOC</small><strong>T{recap.nextTier} · {nextFaction}</strong></header>
+            <div className="tower-block-recap__next-grid">
+              <span><small>Départ</small><strong>Étage {recap.nextFloor}</strong></span>
+              <span><small>Équipement</small><strong>T{access.requiredTier} max</strong></span>
+            </div>
+            <p className={access.canEnter ? "is-compatible" : "is-incompatible"}>{accessMessage(access)}</p>
+          </section>
         </div>
-        <p className={access.canEnter ? "is-compatible" : "is-incompatible"}>{accessMessage(access)}</p>
-      </section>
+
+        <aside className="tower-block-recap__equipment" aria-label="Préparation de l'équipement">
+          <CharacterEquipmentPanel compact title="Équipement" />
+        </aside>
+      </div>
     </ActivityResultPopup>
   );
 }
