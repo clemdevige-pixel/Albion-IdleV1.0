@@ -96,11 +96,31 @@ function getCompletedResearchUnlockIds(research: readonly { readonly id: string;
   );
 }
 
-export function useFeatureUnlockVisit(unlockIds: readonly string[]): void {
+function usePendingFeatureUnlockIds(unlockIds: readonly string[]): readonly string[] {
   useGameBridge();
   const { getAcademyModel } = useGameServices();
+  const acknowledgedFeatureUnlockIds = useSyncExternalStore(
+    dashboardLayoutSaveProvider.subscribe,
+    dashboardLayoutSaveProvider.getAcknowledgedFeatureUnlockIds,
+    dashboardLayoutSaveProvider.getAcknowledgedFeatureUnlockIds,
+  );
   const completedUnlockIds = getCompletedResearchUnlockIds(getAcademyModel().research);
-  const visitKey = unlockIds.filter((unlockId) => completedUnlockIds.has(unlockId)).join("|");
+  return unlockIds.filter((unlockId) => (
+    completedUnlockIds.has(unlockId) && !acknowledgedFeatureUnlockIds.has(unlockId)
+  ));
+}
+
+export function useFeatureUnlockPending(unlockIds: readonly string[]): number {
+  return usePendingFeatureUnlockIds(unlockIds).length;
+}
+
+export function acknowledgeFeatureUnlocks(unlockIds: readonly string[]): void {
+  dashboardLayoutSaveProvider.acknowledgeFeatureUnlocks(unlockIds);
+}
+
+export function useFeatureUnlockVisit(unlockIds: readonly string[]): void {
+  const pendingUnlockIds = usePendingFeatureUnlockIds(unlockIds);
+  const visitKey = pendingUnlockIds.join("|");
 
   useEffect(() => {
     if (visitKey.length > 0) {
