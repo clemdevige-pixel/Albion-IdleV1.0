@@ -31,7 +31,7 @@
 }
 
 .world-tower__intro p {
-  max-width: 270px;
+  max-width: 230px;
   margin: 2px 0 0;
   color: #89847b;
   font-size: 9px;
@@ -39,39 +39,41 @@
   text-align: right;
 }
 
-.world-tower__status,
-.world-tower__rules {
-  display: grid;
-  gap: 12px;
-}
-
 .world-tower__status {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  display: grid;
+  grid-template-columns: 1.2fr 1fr .85fr .85fr;
+  gap: 12px;
   padding: 4px 2px 8px;
   border-bottom: 1px solid #24272c;
 }
 
-.world-tower__rules {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.world-tower__status > div,
-.world-tower__rules span {
+.world-tower__status > div {
   display: grid;
   gap: 2px;
 }
 
 .world-tower__status small,
-.world-tower__rules small {
+.world-tower__block-progress small {
   color: #89929d;
   font-size: 8px;
   text-transform: uppercase;
 }
 
 .world-tower__status strong,
-.world-tower__rules strong {
+.world-tower__block-progress strong {
+  color: #9fa7b1;
+  font-size: 11px;
+}
+
+.world-tower__status .is-primary strong {
+  color: #f0d593;
+  font: 18px var(--ui-font-display);
+  line-height: 1;
+}
+
+.world-tower__status .is-record strong {
   color: var(--ui-color-accent);
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .world-tower__block {
@@ -106,60 +108,167 @@
   font: 16px var(--ui-font-display);
 }
 
-.world-tower__block > header > span {
+.world-tower__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.world-tower__header-actions > span {
   color: #8ec37b;
   font-size: 9px;
   text-transform: uppercase;
 }
 
-.world-tower__block.is-pending > header > span {
+.world-tower__block.is-pending .world-tower__header-actions > span {
   color: #d1aa58;
 }
 
-.world-tower__rooms {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 5px;
+.world-tower__info-button {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid #51452f;
+  border-radius: 50%;
+  background: #11151a;
+  color: #d8bd7d;
+  font: 11px var(--ui-font-display);
+  cursor: pointer;
 }
 
-.world-tower__rooms > span {
+.world-tower__info-button:hover {
+  border-color: #8d692e;
+  color: #f0d593;
+}
+
+.world-tower__rewards {
   display: grid;
-  min-height: 54px;
-  place-content: center;
-  gap: 3px;
-  color: #767d86;
-  text-align: center;
+  gap: 7px;
+  padding: 9px 10px;
   background: #0d1116;
   border: 1px solid #2e343c;
 }
 
-.world-tower__rooms b {
-  color: #a7aeb6;
-  font: 12px var(--ui-font-display);
+.world-tower__rewards > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
 }
 
-.world-tower__rooms small {
-  color: #6f7680;
-  font-size: 7px;
+.world-tower__rewards strong {
+  color: #b8a77e;
+  font-size: 8px;
   text-transform: uppercase;
 }
 
-.world-tower__rooms > span.is-complete {
-  border-color: #6f5a2f;
+.world-tower__rewards span,
+.world-tower__rewards > small {
+  color: #8d949d;
+  font-size: 8px;
 }
 
-.world-tower__rooms > span.is-complete b {
+.world-tower__rewards > small {
+  padding-top: 2px;
+  border-top: 1px solid #242a31;
+}
+
+.world-tower__timeline {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 14px;
+  align-items: start;
+  padding: 8px 4px 2px;
+}
+
+.world-tower__timeline-rail {
+  position: absolute;
+  z-index: 0;
+  top: 22px;
+  left: 10%;
+  right: 10%;
+  height: 2px;
+  background: #2e343c;
+}
+
+.world-tower-step {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+  gap: 5px;
+  min-width: 0;
+  color: #767d86;
+  text-align: center;
+}
+
+.world-tower-step b {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 1px solid #51452f;
+  background: #11151a;
+  color: #b9a778;
+  font: 10px var(--ui-font-display);
+}
+
+.world-tower-step small {
+  min-width: 0;
+  color: #707780;
+  font-size: 7px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.world-tower-step.is-complete b {
+  border-color: #6f5a2f;
   color: #cfa856;
 }
 
-.world-tower__rooms > span.is-current {
-  background: rgba(208, 157, 52, .06);
+.world-tower-step.is-current b {
   border-color: #9a7130;
+  color: #f0d593;
   box-shadow: inset 0 -2px #9a7130;
 }
 
-.world-tower__rooms > span.is-current b {
-  color: #f0d593;
+.world-tower-step--reinforced b {
+  border-color: #5a5f69;
+}
+
+.world-tower-step--elite b {
+  border-color: #725f3e;
+}
+
+.world-tower-step--block_boss b,
+.world-tower-step--major-boss b {
+  width: 34px;
+  height: 34px;
+  margin-top: -2px;
+  border-color: #8d692e;
+  color: #e8ca80;
+}
+
+.world-tower-step--major-boss b {
+  border-color: #9e8150;
+  box-shadow: 0 0 0 1px rgba(158, 129, 80, .2);
+}
+
+.world-tower__block-progress {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  padding-top: 2px;
+}
+
+.world-tower__block-progress > span {
+  display: grid;
+  gap: 2px;
+}
+
+.world-tower__block-progress > span:last-child {
+  text-align: right;
 }
 
 .world-tower__block > footer {
@@ -221,11 +330,14 @@
 
 .world-tower__checkpoints > div {
   display: flex;
-  flex-wrap: wrap;
   gap: 5px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: thin;
 }
 
 .world-tower__checkpoints button {
+  flex: 0 0 auto;
   padding: 5px 8px;
   font-size: 8px;
 }
@@ -234,4 +346,18 @@
   border-color: #9a7130;
   color: #f0d593;
   background: rgba(208, 157, 52, .06);
+}
+
+@media (max-width: 920px) {
+  .world-tower__status {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .world-tower__timeline {
+    gap: 8px;
+  }
+
+  .world-tower-step small {
+    font-size: 6px;
+  }
 }
