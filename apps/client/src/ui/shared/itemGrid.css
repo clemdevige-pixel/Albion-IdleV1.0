@@ -110,6 +110,14 @@
   color: #b9aa8d;
 }
 
+.ui-item-grid__enchantment {
+  position: absolute;
+  left: 6px;
+  bottom: 15px;
+  z-index: 2;
+  pointer-events: none;
+}
+
 .ui-item-grid__quantity {
   right: 5px;
   min-width: 16px;
