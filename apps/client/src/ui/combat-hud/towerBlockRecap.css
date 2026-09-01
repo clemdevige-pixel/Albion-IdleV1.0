@@ -1,38 +1,43 @@
 @import "../character/character.css";
 
 .activity-result--tower-block {
-  width: min(980px, calc(100vw - 32px));
-  max-width: 980px;
+  width: min(1040px, calc(100vw - 32px));
+  max-width: 1040px;
 }
 
 .tower-block-recap__layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(300px, 350px);
-  gap: 18px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
   align-items: start;
-  margin-top: 12px;
+  margin-top: 14px;
+}
+
+.tower-block-recap__summary-column,
+.tower-block-recap__equipment {
+  min-width: 0;
 }
 
 .tower-block-recap__summary-column {
-  min-width: 0;
+  padding-right: 24px;
 }
 
 .tower-block-recap__equipment {
-  min-width: 0;
-  padding: 12px;
-  border: 1px solid #343a41;
-  border-radius: 6px;
-  background: #0c1014;
+  padding: 0 0 0 24px;
+  border: 0;
+  border-left: 1px solid #343a41;
+  border-radius: 0;
+  background: transparent;
 }
 
 .tower-block-recap__equipment .character-module__equipment-title {
   margin: 0;
   color: #e3d7bd;
-  font: 700 15px var(--ui-font-display);
+  font: 700 16px var(--ui-font-display);
 }
 
 .tower-block-recap__equipment .character-module__presets {
-  padding-top: 10px;
+  padding: 10px 0 0;
 }
 
 .tower-block-recap__equipment .character-module__preset-editor {
@@ -45,22 +50,47 @@
 
 .tower-block-recap__equipment .character-module__loadout--compact {
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-  padding-top: 12px;
+  gap: 18px;
+  padding-top: 16px;
 }
 
 .tower-block-recap__equipment .character-module__loadout--compact .character-module__slots {
+  gap: 12px;
   justify-items: center;
 }
 
 .tower-block-recap__equipment .character-module__loadout--compact .ui-item-slot {
-  width: 72px;
-  min-width: 72px;
-  height: 72px;
+  width: 82px;
+  min-width: 82px;
+  height: 82px;
 }
 
 .tower-block-recap__equipment .character-module__loadout--compact .ui-item-slot__label {
-  font-size: 7px;
+  font-size: 8px;
+}
+
+.activity-result--tower-block .tower-block-recap__rewards {
+  margin-top: 12px;
+}
+
+.activity-result--tower-block .tower-block-recap__next {
+  margin-top: 18px;
+  padding: 16px 0 0;
+  border: 0;
+  border-top: 1px solid #343a41;
+  border-radius: 0;
+  background: transparent;
+}
+
+.activity-result--tower-block .tower-block-recap__next-grid > span {
+  padding: 8px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.activity-result--tower-block .tower-block-recap__next p {
+  padding: 7px 9px;
 }
 
 .activity-result--tower-block .activity-result__footer:has(.activity-result__text-action) {
@@ -68,17 +98,28 @@
 }
 
 .activity-result--tower-block .activity-result__footer .dungeon-recap__action--primary {
-  width: min(320px, 100%);
+  width: min(360px, 100%);
   justify-self: center;
 }
 
-@media (max-width: 820px) {
+@media (max-width: 880px) {
   .activity-result--tower-block {
-    width: min(620px, calc(100vw - 24px));
+    width: min(660px, calc(100vw - 24px));
   }
 
   .tower-block-recap__layout {
     grid-template-columns: 1fr;
+  }
+
+  .tower-block-recap__summary-column {
+    padding-right: 0;
+  }
+
+  .tower-block-recap__equipment {
+    margin-top: 20px;
+    padding: 20px 0 0;
+    border-left: 0;
+    border-top: 1px solid #343a41;
   }
 }
 
@@ -91,5 +132,11 @@
   .tower-block-recap__equipment .character-module__preset-select,
   .tower-block-recap__equipment .character-module__preset-editor input {
     grid-column: 1 / -1;
+  }
+
+  .tower-block-recap__equipment .character-module__loadout--compact .ui-item-slot {
+    width: 72px;
+    min-width: 72px;
+    height: 72px;
   }
 }
