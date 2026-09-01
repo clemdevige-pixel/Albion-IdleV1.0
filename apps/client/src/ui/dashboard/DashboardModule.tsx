@@ -34,11 +34,14 @@ import { DashboardProductionCard } from "./components/DashboardProductionCard";
 import { DashboardResearchCard } from "./components/DashboardResearchCard";
 import { DashboardYieldCard } from "./components/DashboardYieldCard";
 
-const ACTIVITY_SECTION_IDS = new Set<DashboardSectionId>(["combat", "research"]);
+const ACTIVITY_SECTION_IDS = new Set<DashboardSectionId>([
+  "combat",
+  "research",
+  "black-market-convoy",
+]);
 const YIELD_SECTION_IDS = new Set<DashboardSectionId>([
   "yield",
   "production",
-  "black-market-convoy",
 ]);
 
 type DashboardGroupId = "activity" | "yield";
