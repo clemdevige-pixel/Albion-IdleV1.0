@@ -109,6 +109,7 @@ export function IslandModule(): JSX.Element {
 
   if (selectedBuilding !== undefined) {
     const moveActive = movingBuildingInstanceId === selectedBuilding.instanceId;
+    const academyInitialView = activeView === "academy_expeditions" ? "expeditions" as const : undefined;
     return (
       <div className="ui-island ui-island--detail">
         <IslandOverviewButton onClick={clearSelection} />
@@ -121,7 +122,7 @@ export function IslandModule(): JSX.Element {
             if (moveActive) cancelMovingBuilding();
             else startMovingBuilding(selectedBuilding.instanceId);
           }}
-          academyInitialView={activeView === "academy_expeditions" ? "expeditions" : undefined}
+          {...(academyInitialView === undefined ? {} : { academyInitialView })}
         />
       </div>
     );
@@ -226,7 +227,7 @@ function BuildingSummary({
       ) : definitionId === "storage" ? (
         <StoragePanel />
       ) : definitionId === "academy" ? (
-        <AcademyPanel level={level} initialView={academyInitialView} />
+        <AcademyPanel level={level} {...(academyInitialView === undefined ? {} : { initialView: academyInitialView })} />
       ) : definition.gatheringService !== undefined ? (
         <GatheringBuildingPanel definitionId={definitionId} islandLevel={islandLevel} />
       ) : definition.refiningService !== undefined ? (
