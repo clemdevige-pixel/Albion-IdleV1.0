@@ -8,13 +8,44 @@ The public game consists of three independent services:
 
 Local saves remain available, while authenticated slots are synchronized with
 the API. PostgreSQL is mandatory when the API runs with `NODE_ENV=production`.
+This is intentional: production account IDs and cloud-save ownership must never
+depend on an ephemeral filesystem.
+
+## Recommended beta topology
+
+The current architecture is provider-agnostic. A low-cost/free beta deployment
+can use:
+
+```text
+Vercel client
+  -> Render Fastify API
+  -> Supabase PostgreSQL
+```
+
+Supabase is only the PostgreSQL host in this topology. Albion Idle does not use
+a Supabase-specific SDK and no gameplay/save logic depends on that provider.
+Moving to another PostgreSQL host later only requires changing `DATABASE_URL`.
+
+Do not deploy the production API with file-backed auth/save repositories on an
+ephemeral host. If the host filesystem is reset, regenerated account UUIDs can
+make otherwise intact browser saves appear to belong to a different account.
+The production configuration guard already rejects a missing `DATABASE_URL`.
 
 ## 1. PostgreSQL
 
 Create a PostgreSQL database with a provider of your choice and keep its
-connection string. The API creates its authentication, OAuth-flow and cloud-save
-tables at startup; there is no separate migration command for this first
-version.
+connection string. For the recommended beta topology, create a Supabase project
+and copy the PostgreSQL connection string intended for an external server such
+as Render.
+
+The connection string is supplied unchanged to:
+
+```text
+DATABASE_URL=<postgres connection string>
+```
+
+The API creates its authentication, OAuth-flow and cloud-save tables at startup;
+there is no separate migration command for this first version.
 
 ## 2. Public API on Render
 
@@ -42,6 +73,10 @@ explicit override on other hosts. Once deployed, verify:
 ```text
 https://<your-api-domain>/health
 ```
+
+A sleeping/unavailable API must not destroy local progress. Cloud-save requests
+are bounded client-side; if synchronization times out, the slot screen falls
+back to the validated browser saves and reports that local mode is active.
 
 ## 3. Discord application
 
@@ -76,7 +111,10 @@ After both deployments are live:
 4. play until an automatic save occurs;
 5. close the page, reopen it and select the same slot;
 6. confirm that equipment, progression and resources are restored;
-7. repeat from a second browser/device to confirm the cloud path rather than
+7. temporarily make the API unavailable and verify that an existing local slot
+   becomes playable after the bounded synchronization attempt;
+8. restore the API and reopen the slot screen to verify synchronization resumes;
+9. repeat from a second browser/device to confirm the cloud path rather than
    local browser storage.
 
 Do not use Vercel preview domains for final Discord validation unless each
