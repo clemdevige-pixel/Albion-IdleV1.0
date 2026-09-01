@@ -96,6 +96,7 @@ export interface TowerNavigationState {
 /** Owns Tower entry/exit, checkpoint selection and the hard authored equipment-tier gate. */
 export class TowerNavigationActions {
   private pendingStart = false;
+  private pendingAbandon = false;
 
   public constructor(private readonly deps: TowerNavigationActionsDependencies) {}
 
@@ -114,11 +115,12 @@ export class TowerNavigationActions {
   /** Clears only transient attempt/request state before a different save snapshot is loaded. */
   public resetTransientState(): void {
     this.pendingStart = false;
+    this.pendingAbandon = false;
     this.deps.towerRouter.abandon();
   }
 
   public selectCheckpoint(floor: number): boolean {
-    if (this.pendingStart || this.deps.towerRouter.isTowerEngaged()) return false;
+    if (this.pendingStart || this.pendingAbandon || this.deps.towerRouter.isTowerEngaged()) return false;
     try {
       this.deps.progression.selectCheckpoint(floor);
     } catch {
@@ -129,7 +131,12 @@ export class TowerNavigationActions {
   }
 
   public requestStart(): boolean {
-    if (this.deps.isCombatSuspended() || this.pendingStart || this.deps.towerRouter.isTowerActive()) {
+    if (
+      this.deps.isCombatSuspended()
+      || this.pendingStart
+      || this.pendingAbandon
+      || this.deps.towerRouter.isTowerActive()
+    ) {
       return false;
     }
     const access = this.getAccess();
@@ -153,14 +160,38 @@ export class TowerNavigationActions {
   }
 
   public flushPendingStart(): boolean {
-    if (!this.pendingStart || !this.deps.stopController.isPaused()) return false;
+    if (!this.deps.stopController.isPaused()) return false;
+    if (this.pendingAbandon) return this.abandonNow();
+    if (!this.pendingStart) return false;
     return this.startNow();
   }
 
   public abandon(): boolean {
-    if (!this.deps.towerRouter.abandon()) return false;
+    if (!this.deps.towerRouter.isTowerActive()) return false;
+    if (this.pendingAbandon) return true;
+
+    const loopState = this.deps.combatRuntime.getLoopState();
+    if (loopState === "combat" || loopState === "stop_requested") {
+      this.pendingAbandon = true;
+      if (loopState === "combat" && !this.deps.stopController.requestStopAfterEncounter()) {
+        this.pendingAbandon = false;
+        return false;
+      }
+      this.deps.onStateChanged();
+      return true;
+    }
+
+    return this.abandonNow();
+  }
+
+  private abandonNow(): boolean {
+    if (!this.deps.towerRouter.abandon()) {
+      this.pendingAbandon = false;
+      return false;
+    }
     this.deps.combatRuntime.interruptEncounter();
     this.deps.stopController.reset();
+    this.pendingAbandon = false;
     worldTravelTransition.start();
     this.deps.onStateChanged();
     return true;
