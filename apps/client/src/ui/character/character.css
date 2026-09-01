@@ -34,7 +34,7 @@
 
 .character-module__loadout { display: grid; grid-template-columns: 84px minmax(176px, 1fr) 84px; gap: 14px; align-items: stretch; padding-top: 8px; }
 .character-module__slots { display: grid; gap: 11px; align-content: start; }
-.character-module__slots .ui-item-slot { width: 84px; min-width: 84px; }
+.character-module__slots .ui-item-slot { width: 84px; min-width: 84px; height: 84px; }
 .character-module__slots .ui-item-slot__label { max-width: 100%; overflow: visible; font-size: 8px; text-overflow: clip; white-space: nowrap; }
 .character-module__hero { position: relative; min-width: 0; min-height: 0; align-self: stretch; overflow: hidden; }
 .character-module__hero::after { position: absolute; right: 8%; bottom: 8px; left: 8%; height: 18px; border-radius: 50%; content: ""; background: rgb(0 0 0 / 44%); filter: blur(7px); }
@@ -75,7 +75,7 @@
   .character-module { padding: 8px; }
   .character-module__preset-editor { grid-template-columns: 1fr 1fr; }
   .character-module__loadout { grid-template-columns: 70px minmax(136px, 1fr) 70px; gap: 8px; }
-  .character-module__slots .ui-item-slot { width: 70px; min-width: 70px; }
+  .character-module__slots .ui-item-slot { width: 70px; min-width: 70px; height: 70px; }
   .character-module__hero-idle { width: min(104%, 252px); }
   .character-module__hero-idle--cropped { width: auto; }
   .character-module__stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px 16px; }
