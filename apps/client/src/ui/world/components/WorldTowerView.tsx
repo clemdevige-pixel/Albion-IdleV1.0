@@ -1,7 +1,8 @@
-import { useCallback } from "react";
-import { FACTION_CAPE_FACTIONS } from "@game/data";
+import { useCallback, useState } from "react";
+import { FACTION_CAPE_FACTIONS, getTowerBlockSilverReward } from "@game/data";
 import { getTowerFloorDefinition } from "@game/gameplay";
 import type { GameBridgeState } from "../../../game/GameBridge.js";
+import { resolveTowerRewardBreakdown } from "../../../runtime/TowerRewardRuntime.js";
 import type { TowerAccessState } from "../../../state/TowerNavigationActions.js";
 import { useGameServices } from "../../../state/GameContext.js";
 import { useGameUiSelector } from "../../state/useGameUiSelector.js";
@@ -49,6 +50,14 @@ function getAccessMessage(access: TowerAccessState): string | undefined {
   return undefined;
 }
 
+function getFloorRoleLabel(role: string, majorBoss: boolean): string {
+  if (majorBoss) return "Boss majeur";
+  if (role === "block_boss") return "Boss";
+  if (role === "elite") return "Élite";
+  if (role === "reinforced") return "Renforcé";
+  return "Normal";
+}
+
 export function WorldTowerView(): JSX.Element {
   const {
     getTowerState,
@@ -56,6 +65,7 @@ export function WorldTowerView(): JSX.Element {
     startTower,
     abandonTower,
   } = useGameServices();
+  const [rewardsOpen, setRewardsOpen] = useState(false);
 
   const selectPresentation = useCallback((state: GameBridgeState): TowerPresentationModel => {
     const tower = getTowerState();
@@ -82,6 +92,9 @@ export function WorldTowerView(): JSX.Element {
   const factionName = resolveFactionDisplayName(block.factionId);
   const accessMessage = getAccessMessage(presentation.access);
   const canStart = presentation.access.canEnter && !presentation.active && !presentation.pendingStart;
+  const rewardBreakdown = resolveTowerRewardBreakdown(towerState.progression);
+  const blockRewards = getTowerBlockSilverReward(block.tier);
+  const rewardsId = "world-tower-rewards";
 
   return (
     <div className="world-tower">
@@ -90,14 +103,14 @@ export function WorldTowerView(): JSX.Element {
           <small>ACTIVITÉ ENDGAME</small>
           <h2>Tour sans fin</h2>
         </div>
-        <p>Blocs de 5 étages · Tier et faction fixes par bloc · checkpoints permanents.</p>
+        <p>5 étages par bloc · checkpoint après chaque bloc.</p>
       </header>
 
       <section className="world-tower__status" aria-label="Progression de la Tour">
-        <div><small>Étage actuel</small><strong>{presentation.currentFloor}</strong></div>
-        <div><small>Record</small><strong>{presentation.highestClearedFloor}</strong></div>
+        <div className="is-primary"><small>Étage actuel</small><strong>{presentation.currentFloor}</strong></div>
+        <div className="is-record"><small>Record</small><strong>{presentation.highestClearedFloor}</strong></div>
         <div><small>Checkpoint</small><strong>{presentation.checkpointFloor}</strong></div>
-        <div><small>Mode Endless</small><strong>{presentation.endlessUnlocked ? "Débloqué" : "Étage 25"}</strong></div>
+        <div><small>Endless</small><strong>{presentation.endlessUnlocked ? "Débloqué" : "Étage 25"}</strong></div>
       </section>
 
       <article className={`world-tower__block${presentation.active ? " is-active" : ""}${presentation.pendingStart ? " is-pending" : ""}`}>
@@ -106,27 +119,53 @@ export function WorldTowerView(): JSX.Element {
             <small>Bloc {block.blockIndex + 1} · Étages {block.floorStart}–{block.floorEnd}</small>
             <h3>T{block.tier} · {factionName}</h3>
           </div>
-          <span>{presentation.active ? "En cours" : presentation.pendingStart ? "Après ce combat" : "Prêt"}</span>
+          <div className="world-tower__header-actions">
+            <button
+              type="button"
+              className="world-tower__info-button"
+              aria-label="Récompenses de la Tour"
+              aria-expanded={rewardsOpen}
+              aria-controls={rewardsId}
+              onClick={() => { setRewardsOpen((open) => !open); }}
+            >i</button>
+            <span>{presentation.active ? "En cours" : presentation.pendingStart ? "Après ce combat" : "Prêt"}</span>
+          </div>
         </header>
 
-        <div className="world-tower__rooms" aria-label="Étages du bloc">
+        {rewardsOpen ? (
+          <section id={rewardsId} className="world-tower__rewards" aria-label="Récompenses de la Tour">
+            <div><strong>Étage courant</strong><span>{rewardBreakdown.baseSilver.toLocaleString("fr-FR")} Silver · {rewardBreakdown.baseFame.toLocaleString("fr-FR")} Fame</span></div>
+            <div><strong>Fin de bloc</strong><span>{blockRewards.repeatableChestSilver.toLocaleString("fr-FR")} Silver</span></div>
+            <div><strong>Première validation</strong><span>+{blockRewards.firstClearBonusSilver.toLocaleString("fr-FR")} Silver</span></div>
+            {block.majorBoss ? <div><strong>Boss majeur · première fois</strong><span>+{blockRewards.majorBossFirstClearBonusSilver.toLocaleString("fr-FR")} Silver</span></div> : null}
+            <small>La Tour ne remplace pas les loots spécialisés du Monde ou des Donjons.</small>
+          </section>
+        ) : null}
+
+        <div className="world-tower__timeline" aria-label="Étages du bloc">
+          <span className="world-tower__timeline-rail" aria-hidden="true" />
           {Array.from({ length: 5 }, (_, index) => {
             const roomFloor = block.floorStart + index;
+            const room = getTowerFloorDefinition(roomFloor, towerState.progression.seed);
             const completed = roomFloor <= presentation.highestClearedFloor;
             const current = roomFloor === presentation.currentFloor;
+            const roleLabel = getFloorRoleLabel(room.role, room.majorBoss);
             return (
-              <span key={roomFloor} className={`${completed ? "is-complete" : ""}${current ? " is-current" : ""}`}>
+              <span
+                key={roomFloor}
+                className={`world-tower-step world-tower-step--${room.majorBoss ? "major-boss" : room.role}${completed ? " is-complete" : ""}${current ? " is-current" : ""}`}
+                title={`Étage ${String(roomFloor)} · ${roleLabel}`}
+              >
                 <b>{completed ? "✓" : roomFloor}</b>
-                <small>{index === 4 ? (block.majorBoss ? "Boss majeur" : "Boss") : `Salle ${String(index + 1)}`}</small>
+                <small>{roleLabel}</small>
               </span>
             );
           })}
         </div>
 
-        <div className="world-tower__rules">
-          <span><small>Tier requis</small><strong>T{block.tier}</strong></span>
-          <span><small>Faction</small><strong>{factionName}</strong></span>
-          <span><small>Étage du bloc</small><strong>{floor.indexInBlock + 1}/5</strong></span>
+        <div className="world-tower__block-progress">
+          <span><small>Progression du bloc</small><strong>{floor.indexInBlock + 1}/5</strong></span>
+          <span><small>Finale</small><strong>{block.majorBoss ? "Boss majeur" : "Boss"} · Étage {block.floorEnd}</strong></span>
         </div>
 
         <footer>
