@@ -306,11 +306,16 @@ Status: **TRAITÉ + IMPLÉMENTÉ** for current placement/right-click behavior; f
 
 ## P2.1 — Inventory / Bank / Equipment targeted polish
 
-Status: **À FAIRE**
+Status: **EN COURS D’IMPLÉMENTATION**
 
-Already close to target. No redesign.
+Validated scope:
 
-Only evidence-based improvements, e.g. search/sorting/filter clarity/empty states/accessibility if real usage proves a need.
+- centralize Inventory / Bank item categorization through one shared UI resolver derived from existing authoritative catalogs;
+- add local visual feedback for near-full / full Inventory and Bank capacity without creating new runtime state;
+- make `ItemGrid` accessibility guidance reflect the actual interaction contract of each context;
+- no simple-click selection layer (hover tooltip already covers inspection);
+- no additional empty-state treatment;
+- no search / advanced Tier-Quality-Enchantment filters in this pass.
 
 ## P2.2 — Tooltip system final polish
 
@@ -401,4 +406,4 @@ Validated completed phases:
 
 Current resume point:
 
-> **P2 — targeted polish**
+> **P2.1 — Inventory / Bank / Equipment targeted polish (implementation in progress)**
