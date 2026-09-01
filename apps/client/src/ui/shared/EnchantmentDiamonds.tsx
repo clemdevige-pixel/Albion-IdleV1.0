@@ -15,7 +15,7 @@ export function EnchantmentDiamonds({
 }: EnchantmentDiamondsProps): JSX.Element {
   return (
     <span
-      className={`enchantment-diamonds enchantment-diamonds--${variant}`}
+      className={`enchantment-diamonds enchantment-diamonds--${variant} enchantment-text--${String(level)}`}
       aria-label={`Niveau d'enchantement ${String(level)} sur 4`}
     >
       {showLabel && <span className="enchantment-diamonds__label">Niveau d’enchantement</span>}
