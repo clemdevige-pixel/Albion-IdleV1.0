@@ -80,6 +80,7 @@ export * from "./config/dungeon-keys.js";
 export * from "./config/dungeon-artifacts.js";
 export * from "./config/dungeon-loot-balance.js";
 export * from "./config/dungeon-relic.js";
+export * from "./config/dungeon-content.js";
 export * from "./config/research-content.js";
 export * from "./config/awakening-balance.js";
 export * from "./config/artifact-weapon-craft-balance.js";
