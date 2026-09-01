@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FeatureAttentionBadge } from "../attention/FeatureAttentionBadge";
 import {
   FEATURE_UNLOCK_VISITS,
   useFeatureUnlockPending,
   useFeatureUnlockVisit,
 } from "../attention/usePlayerAttention";
+import { useNavigation } from "../navigation";
 import { GatheringView } from "../production/gathering/GatheringView";
 import { WorldAchievementsView } from "./components/WorldAchievementsView";
 import { WorldBestiaryView } from "./components/WorldBestiaryView";
@@ -31,6 +32,7 @@ const TOWER_TAB: WorldModuleTab = { id: "tower", label: "Tour" };
 
 export function WorldModule(): JSX.Element {
   useGameBridge();
+  const { activeView } = useNavigation();
   const { isDungeonSystemUnlocked, isTowerSystemUnlocked } = useGameServices();
   const [activeTab, setActiveTab] = useState<WorldModuleTabId>("zones");
   const zone = useWorldZones();
@@ -39,6 +41,12 @@ export function WorldModule(): JSX.Element {
   const towerUnlocked = isTowerSystemUnlocked() || isDevSandboxMode();
   const dungeonUnlockCount = useFeatureUnlockPending(FEATURE_UNLOCK_VISITS.dungeons);
   const towerUnlockCount = useFeatureUnlockPending(FEATURE_UNLOCK_VISITS.tower);
+
+  useEffect(() => {
+    if (activeView === "dungeons" && dungeonsUnlocked) setActiveTab("dungeons");
+    else if (activeView === "tower" && towerUnlocked) setActiveTab("tower");
+  }, [activeView, dungeonsUnlocked, towerUnlocked]);
+
   const tabs = BASE_TABS.flatMap((tab) => {
     if (tab.id !== "zones") return [tab];
     return [
