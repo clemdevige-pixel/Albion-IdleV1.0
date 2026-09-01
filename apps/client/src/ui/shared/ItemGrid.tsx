@@ -69,14 +69,14 @@ export function ItemGrid({
             {itemId !== undefined && (
               <>
                 <span className="ui-item-grid__visual"><ItemVisual itemId={itemId} /></span>
-                {isEquipment && (
-                  <span className="ui-item-grid__enchantment">
-                    <EnchantmentDiamonds level={slot.enchantment} />
-                  </span>
-                )}
                 {definition !== undefined && (
                   <span className={`ui-item-grid__tier${getEnchantmentTextClass(slot.enchantment)}`}>
                     T{String(definition.tier)}.{String(slot.enchantment)}
+                  </span>
+                )}
+                {isEquipment && slot.quantity <= 1 && (
+                  <span className="ui-item-grid__enchantment">
+                    <EnchantmentDiamonds level={slot.enchantment} />
                   </span>
                 )}
                 {slot.quantity > 1 && <span className="ui-item-grid__quantity">{String(slot.quantity)}</span>}
