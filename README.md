@@ -17,6 +17,7 @@ Current implemented foundations include:
 - player island progression and production infrastructure;
 - faction systems, faction artifacts and faction dungeons;
 - dungeon completion rewards, keys and related progression data;
+- endgame systems under active validation, including the Endless Tower and Black Market;
 - local persistence, save/load migrations and background/offline progression;
 - React ↔ gameplay ↔ Phaser separation through GameBridge and presentation controllers;
 - data-driven content registries and validation tooling.
