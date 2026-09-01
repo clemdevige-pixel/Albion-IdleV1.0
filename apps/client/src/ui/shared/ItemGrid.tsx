@@ -9,6 +9,7 @@ interface ItemGridProps {
   readonly slots: readonly InventorySlotVM[];
   readonly label: string;
   readonly interactive?: boolean;
+  readonly interactionHint?: string;
   readonly draggable?: boolean;
   readonly selectedPosition?: number | undefined;
   readonly onItemClick?: (slot: InventorySlotVM) => void;
@@ -24,6 +25,7 @@ export function ItemGrid({
   slots,
   label,
   interactive = false,
+  interactionHint,
   draggable = false,
   selectedPosition,
   onItemClick,
@@ -38,6 +40,11 @@ export function ItemGrid({
     const parsed = Number(event.dataTransfer.getData("text/plain"));
     return Number.isInteger(parsed) ? parsed : undefined;
   };
+
+  const accessibilityHint = [
+    interactionHint,
+    onToggleItemFavorite !== undefined ? "Utilisez l’étoile pour suivre une ressource." : undefined,
+  ].filter((hint): hint is string => hint !== undefined && hint.length > 0).join(" ");
 
   return (
     <div className="ui-item-grid" role="grid" aria-label={label}>
@@ -127,7 +134,7 @@ export function ItemGrid({
           </ItemHoverTooltip>
         );
       })}
-      {interactive && <span className="sr-only">Double-cliquez pour utiliser ou équiper. Glissez-déposez pour déplacer. Utilisez l’étoile pour suivre une ressource.</span>}
+      {interactive && accessibilityHint.length > 0 && <span className="sr-only">{accessibilityHint}</span>}
     </div>
   );
 }
