@@ -32,6 +32,8 @@ describe("TowerCombatRuntimeRouter", () => {
   it("falls through while Tower is inactive", () => {
     const { router } = createRouter();
     expect(router.isTowerActive()).toBe(false);
+    expect(router.isTowerIntermission()).toBe(false);
+    expect(router.isTowerEngaged()).toBe(false);
     expect(router.getFactionCombatContext()).toBeUndefined();
     expect(router.getEncounterIndex(3)).toBe(3);
     expect(router.onVictory(() => ({ enteredNewSegment: true }))).toEqual({ enteredNewSegment: true });
@@ -40,6 +42,9 @@ describe("TowerCombatRuntimeRouter", () => {
   it("exposes the current authored Tower faction context while active", () => {
     const { router } = createRouter();
     router.start();
+    expect(router.isTowerActive()).toBe(true);
+    expect(router.isTowerIntermission()).toBe(false);
+    expect(router.isTowerEngaged()).toBe(true);
     expect(router.getFactionCombatContext()).toEqual({ factionId: "keeper", tier: 8 });
   });
 
@@ -58,7 +63,7 @@ describe("TowerCombatRuntimeRouter", () => {
     expect(router.getEncounterIndex(4)).toBe(1);
   });
 
-  it("closes the attempt, exposes the next block and requests a pause after a completed block", () => {
+  it("keeps Tower engaged in preparation after a completed block", () => {
     const requestPauseAfterEncounter = vi.fn(() => true);
     const { progression, router } = createRouter({ requestPauseAfterEncounter });
     expect(router.start()).toBe(true);
@@ -72,6 +77,8 @@ describe("TowerCombatRuntimeRouter", () => {
 
     expect(router.onVictory(() => ({ enteredNewSegment: false }))).toEqual({ enteredNewSegment: true });
     expect(router.isTowerActive()).toBe(false);
+    expect(router.isTowerIntermission()).toBe(true);
+    expect(router.isTowerEngaged()).toBe(true);
     expect(progression.getSnapshot()).toMatchObject({
       currentFloor: 6,
       highestClearedFloor: 5,
@@ -85,6 +92,23 @@ describe("TowerCombatRuntimeRouter", () => {
       unlockedEndlessNow: false,
     });
     expect(requestPauseAfterEncounter).toHaveBeenCalledTimes(1);
+
+    expect(router.start()).toBe(true);
+    expect(router.isTowerActive()).toBe(true);
+    expect(router.isTowerIntermission()).toBe(false);
+    expect(router.isTowerEngaged()).toBe(true);
+  });
+
+  it("can explicitly leave Tower during block preparation", () => {
+    const { router } = createRouter({ requestPauseAfterEncounter: () => true });
+    router.start();
+    for (let floor = 1; floor <= 5; floor += 1) {
+      router.onVictory(() => ({ enteredNewSegment: false }));
+    }
+    expect(router.isTowerIntermission()).toBe(true);
+    expect(router.abandon()).toBe(true);
+    expect(router.isTowerEngaged()).toBe(false);
+    expect(router.abandon()).toBe(false);
   });
 
   it("unlocks Endless and marks the major milestone after floor 25", () => {
@@ -95,6 +119,7 @@ describe("TowerCombatRuntimeRouter", () => {
     expect(router.start()).toBe(true);
     expect(router.onVictory(() => ({ enteredNewSegment: false }))).toEqual({ enteredNewSegment: true });
     expect(router.isTowerActive()).toBe(false);
+    expect(router.isTowerIntermission()).toBe(true);
     expect(progression.getSnapshot()).toMatchObject({
       currentFloor: 26,
       highestClearedFloor: 25,
@@ -122,6 +147,8 @@ describe("TowerCombatRuntimeRouter", () => {
 
     expect(fallbackCalled).toBe(false);
     expect(router.isTowerActive()).toBe(false);
+    expect(router.isTowerIntermission()).toBe(false);
+    expect(router.isTowerEngaged()).toBe(false);
     expect(router.getFactionCombatContext()).toBeUndefined();
     expect(progression.getSnapshot()).toMatchObject({ currentFloor: 6, checkpointFloor: 6 });
   });
@@ -145,6 +172,7 @@ describe("TowerCombatRuntimeRouter", () => {
 
     expect(fallbackCalled).toBe(false);
     expect(router.isTowerActive()).toBe(false);
+    expect(router.isTowerEngaged()).toBe(false);
     expect(progression.getSnapshot()).toMatchObject({
       currentFloor: 31,
       highestClearedFloor: 32,
@@ -158,6 +186,7 @@ describe("TowerCombatRuntimeRouter", () => {
     router.start();
     expect(router.abandon()).toBe(true);
     expect(router.abandon()).toBe(false);
+    expect(router.isTowerEngaged()).toBe(false);
     expect(progression.getSnapshot()).toMatchObject({
       currentFloor: 1,
       highestClearedFloor: 0,
