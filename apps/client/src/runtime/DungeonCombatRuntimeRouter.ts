@@ -98,7 +98,10 @@ export class DungeonCombatRuntimeRouter {
       return;
     }
     this.restoreHealthOnNextWorldEncounter = true;
+    const run = this.dungeonRuntime.activeRun;
+    if (run?.status === "active") {
+      dungeonCompletionFlow.fail(run.definitionId, run.encounterIndex);
+    }
     this.dungeonRuntime.fail();
-    dungeonCompletionFlow.cancel();
   }
 }
