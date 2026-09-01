@@ -109,7 +109,9 @@ export function IslandModule(): JSX.Element {
 
   if (selectedBuilding !== undefined) {
     const moveActive = movingBuildingInstanceId === selectedBuilding.instanceId;
-    const academyInitialView = activeView === "academy_expeditions" ? "expeditions" as const : undefined;
+    const academyInitialView: "expeditions" | undefined = activeView === "academy_expeditions"
+      ? "expeditions"
+      : undefined;
     return (
       <div className="ui-island ui-island--detail">
         <IslandOverviewButton onClick={clearSelection} />
