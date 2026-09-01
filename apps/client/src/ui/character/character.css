@@ -86,3 +86,12 @@
   .character-module__stat-values { gap: 8px; }
   .character-module__stat-values strong { font-size: 15px; }
 }
+
+@media (max-width: 920px) {
+  .character-module__loadout { grid-template-columns: 62px minmax(112px, 1fr) 62px; gap: 6px; }
+  .character-module__slots { gap: 8px; }
+  .character-module__slots .ui-item-slot { width: 62px; min-width: 62px; height: 62px; }
+  .character-module__slots .ui-item-slot__label { font-size: 7px; }
+  .character-module__hero-idle { width: min(102%, 220px); }
+  .character-module__hero-idle--cropped { width: auto; }
+}
