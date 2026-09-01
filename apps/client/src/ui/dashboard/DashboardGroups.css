@@ -5,24 +5,11 @@
 
 .dashboard-group__header {
   display: flex;
-  min-height: 28px;
+  min-height: 24px;
   align-items: end;
   justify-content: space-between;
   padding: 2px 3px 0;
   border-bottom: 1px solid rgb(91 69 37 / 42%);
-}
-
-.dashboard-group__header > div {
-  display: grid;
-  gap: 1px;
-}
-
-.dashboard-group__header span {
-  color: var(--ui-color-text-muted);
-  font-size: 9px;
-  font-weight: var(--ui-weight-semibold);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
 }
 
 .dashboard-group__header h2 {
