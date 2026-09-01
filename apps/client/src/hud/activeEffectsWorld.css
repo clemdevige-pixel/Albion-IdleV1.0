@@ -88,34 +88,3 @@
   visibility: visible;
   transform: translate(-50%, 0);
 }
-
-.combat-encounter-badge {
-  position: absolute;
-  z-index: 31;
-  min-width: 42px;
-  padding: 2px 7px 3px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 3px;
-  transform: translate(-50%, -66px);
-  font-family: var(--ui-font-display, Georgia, serif);
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  line-height: 1;
-  text-align: center;
-  text-shadow: 0 1px 2px #000;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.32);
-  pointer-events: none;
-}
-
-.combat-encounter-badge--elite {
-  border-color: rgba(112, 163, 223, 0.72);
-  color: #d6e9ff;
-  background: rgba(29, 54, 82, 0.92);
-}
-
-.combat-encounter-badge--boss {
-  border-color: rgba(207, 75, 68, 0.82);
-  color: #ffd9d4;
-  background: rgba(91, 24, 24, 0.94);
-}
