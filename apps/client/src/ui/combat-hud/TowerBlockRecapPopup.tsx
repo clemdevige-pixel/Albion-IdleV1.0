@@ -5,6 +5,7 @@ import type { TowerAccessState } from "../../state/TowerNavigationActions.js";
 import { useGameServices } from "../../state/GameContext.js";
 import { CharacterEquipmentPanel } from "../character/components/CharacterEquipmentPanel.js";
 import { ActivityResultPopup } from "./ActivityResultPopup.js";
+import "./towerBlockRecap.css";
 
 function formatNumber(value: number): string {
   return new Intl.NumberFormat("fr-FR").format(value);
