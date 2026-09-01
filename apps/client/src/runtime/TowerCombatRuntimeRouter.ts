@@ -9,7 +9,9 @@ import type {
   CombatEntityFactoryDependencies,
   SpawnedEnemyResult,
 } from "./combatEntityFactory.js";
+import { towerBlockCompletionFlow } from "./TowerBlockCompletionFlow.js";
 import type { TowerCombatEncounterSource } from "./TowerCombatEncounterSource.js";
+import { resolveTowerRewardBreakdown } from "./TowerRewardRuntime.js";
 
 export interface TowerVictoryResult {
   readonly enteredNewSegment: boolean;
@@ -78,10 +80,31 @@ export class TowerCombatRuntimeRouter {
 
   public onVictory(fallback: () => TowerVictoryResult): TowerVictoryResult {
     if (!this.active) return fallback();
-    const floor = this.progression.getSnapshot().currentFloor;
-    const result = this.progression.clearCurrentFloor(floor);
+    const before = this.progression.getSnapshot();
+    const completedFloor = getTowerFloorDefinition(before.currentFloor, before.seed);
+    const reward = resolveTowerRewardBreakdown(before);
+    const result = this.progression.clearCurrentFloor(completedFloor.floor);
     if (result.checkpointAdvanced) {
+      const after = this.progression.getSnapshot();
+      const nextFloor = getTowerFloorDefinition(after.currentFloor, after.seed);
       this.active = false;
+      towerBlockCompletionFlow.show({
+        blockIndex: completedFloor.block.blockIndex,
+        floorStart: completedFloor.block.floorStart,
+        floorEnd: completedFloor.block.floorEnd,
+        tier: completedFloor.block.tier,
+        factionId: completedFloor.block.factionId,
+        finalFloorSilver: reward.baseSilver,
+        repeatableBlockChestSilver: reward.repeatableBlockChestSilver,
+        firstClearBlockBonusSilver: reward.firstClearBlockBonusSilver,
+        majorBossFirstClearBonusSilver: reward.majorBossFirstClearBonusSilver,
+        checkpointFloor: after.checkpointFloor,
+        nextFloor: nextFloor.floor,
+        nextTier: nextFloor.block.tier,
+        nextFactionId: nextFloor.block.factionId,
+        endlessUnlocked: after.endlessUnlocked,
+        unlockedEndlessNow: !before.endlessUnlocked && after.endlessUnlocked,
+      });
       this.blockTransitionPort?.requestPauseAfterEncounter();
     }
     return { enteredNewSegment: result.checkpointAdvanced };
