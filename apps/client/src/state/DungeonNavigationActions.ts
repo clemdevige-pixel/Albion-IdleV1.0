@@ -105,6 +105,7 @@ export interface DungeonNavigationState {
  */
 export class DungeonNavigationActions {
   private pendingDefinitionId: string | null = null;
+  private pendingAbandon = false;
 
   public constructor(private readonly deps: DungeonNavigationActionsDependencies) {}
 
@@ -120,6 +121,7 @@ export class DungeonNavigationActions {
   /** Clears only transient attempt/request state before a different save snapshot is loaded. */
   public resetTransientState(): void {
     this.pendingDefinitionId = null;
+    this.pendingAbandon = false;
     if (this.deps.dungeonRuntime.activeRun?.status === "active") {
       this.deps.dungeonRuntime.abandon();
       dungeonCompletionFlow.cancel();
@@ -131,6 +133,7 @@ export class DungeonNavigationActions {
       this.deps.isCombatSuspended()
       || this.deps.dungeonRuntime.activeRun?.status === "active"
       || this.pendingDefinitionId !== null
+      || this.pendingAbandon
     ) return false;
 
     const access = this.getAccess(definitionId);
@@ -157,17 +160,41 @@ export class DungeonNavigationActions {
 
   /** Flush only after CombatRuntime.tick has fully reached the stable paused state. */
   public flushPendingStart(): boolean {
+    if (!this.deps.stopController.isPaused()) return false;
+    if (this.pendingAbandon) return this.abandonNow();
     const definitionId = this.pendingDefinitionId;
-    if (definitionId === null || !this.deps.stopController.isPaused()) return false;
+    if (definitionId === null) return false;
     return this.startNow(definitionId);
   }
 
   public abandon(): boolean {
     if (this.deps.dungeonRuntime.activeRun?.status !== "active") return false;
+    if (this.pendingAbandon) return true;
+
+    const loopState = this.deps.combatRuntime.getLoopState();
+    if (loopState === "combat" || loopState === "stop_requested") {
+      this.pendingAbandon = true;
+      if (loopState === "combat" && !this.deps.stopController.requestStopAfterEncounter()) {
+        this.pendingAbandon = false;
+        return false;
+      }
+      this.deps.onStateChanged();
+      return true;
+    }
+
+    return this.abandonNow();
+  }
+
+  private abandonNow(): boolean {
+    if (this.deps.dungeonRuntime.activeRun?.status !== "active") {
+      this.pendingAbandon = false;
+      return false;
+    }
     this.deps.dungeonRuntime.abandon();
     dungeonCompletionFlow.cancel();
     this.deps.combatRuntime.interruptEncounter();
     this.deps.stopController.reset();
+    this.pendingAbandon = false;
     worldTravelTransition.start();
     this.deps.onStateChanged();
     return true;
