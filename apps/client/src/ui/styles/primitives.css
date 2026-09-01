@@ -64,8 +64,8 @@
 .ui-item-slot__label { position: absolute; top: 5px; inset-inline: 2px; overflow: hidden; font-size: 8px; letter-spacing: 0.04em; text-align: center; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
 .ui-item-slot__visual { display: block; width: 44px; height: 44px; }
 .ui-item-slot__empty { color: #404b5e; font-size: var(--ui-text-xl); }
-.ui-item-slot__meta { position: absolute; right: 4px; bottom: 3px; color: var(--ui-color-accent-hover); font-size: 8px; }
-.ui-item-slot__enchantment { position: absolute; left: 5px; bottom: 5px; }
+.ui-item-slot__meta { position: absolute; left: 4px; bottom: 3px; color: var(--ui-color-accent-hover); font-size: 8px; }
+.ui-item-slot__enchantment { position: absolute; right: 5px; bottom: 5px; }
 .ui-item-slot--disabled { background: repeating-linear-gradient(135deg, #171c25 0 7px, #11161e 7px 14px); cursor: not-allowed; opacity: 0.65; }
 .ui-item-slot__disabled { display: grid; gap: 1px; place-items: center; }
 .ui-item-slot__disabled strong { font-size: var(--ui-text-lg); }
@@ -108,14 +108,9 @@
   height: 5px;
 }
 
-.enchantment-diamonds--tooltip {
-  display: grid;
-  gap: 6px;
-}
-
 .enchantment-diamonds--tooltip .enchantment-diamonds__diamond {
-  width: 9px;
-  height: 9px;
+  width: 8px;
+  height: 8px;
 }
 
 .enchantment-diamonds__label {
@@ -126,10 +121,10 @@
   text-transform: uppercase;
 }
 
-.item-hover-tooltip__enchantment {
-  margin-bottom: 4px;
-  padding: 8px 12px 9px;
-  border: 1px solid var(--ui-color-border-subtle);
-  border-radius: var(--ui-radius-sm);
-  background: #10151e;
+.item-hover-tooltip__enchantment-inline {
+  position: absolute;
+  top: 31px;
+  right: 20px;
+  z-index: 2;
+  pointer-events: none;
 }
