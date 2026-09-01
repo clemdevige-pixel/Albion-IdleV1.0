@@ -26,12 +26,12 @@ export type AbilityAutoRule = AuthoredWeaponAbilityAutoRule;
 export type AbilityMechanic = AuthoredWeaponAbilityMechanic;
 export type AbilityMechanicsProfile = AuthoredWeaponAbilityMechanicsProfile;
 export type AbilityAutoCastRule = AbilityAutoRule;
-export interface ClientAbilityDefinition extends AbilityDefinitionLike, AuthoredWeaponAbilityDefinition {}
+export type ClientAbilityDefinition = AuthoredWeaponAbilityDefinition & AbilityDefinitionLike;
 export interface WeaponAbilityUnlock { readonly unlockMasteryLevel: number; readonly source: "family" | "specialization"; readonly ability: ClientAbilityDefinition; }
 export interface WeaponCraftMaterial { readonly kind: "wood" | "metal" | "leather" | "cloth"; readonly quantity: number; }
 export type WeaponCraftRule = { readonly kind: "standard"; readonly materials: readonly WeaponCraftMaterial[] } | { readonly kind: "artifact_pending" };
 
-const ABILITIES: Readonly<Record<string, ClientAbilityDefinition>> = STANDARD_WEAPON_ABILITIES;
+const ABILITIES = STANDARD_WEAPON_ABILITIES satisfies Readonly<Record<string, ClientAbilityDefinition>>;
 
 export const WEAPON_FAMILIES = {
   sword: { masteryId: "mastery_sword", name: "Épées", sharedAbilities: [ABILITIES.swordHeroicStrike, ABILITIES.swordGuardBreaker] },
