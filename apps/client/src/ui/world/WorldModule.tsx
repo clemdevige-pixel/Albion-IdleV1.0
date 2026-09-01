@@ -1,5 +1,10 @@
 import { useState } from "react";
-import { FEATURE_UNLOCK_VISITS, useFeatureUnlockVisit } from "../attention/usePlayerAttention";
+import { FeatureAttentionBadge } from "../attention/FeatureAttentionBadge";
+import {
+  FEATURE_UNLOCK_VISITS,
+  useFeatureUnlockPending,
+  useFeatureUnlockVisit,
+} from "../attention/usePlayerAttention";
 import { GatheringView } from "../production/gathering/GatheringView";
 import { WorldAchievementsView } from "./components/WorldAchievementsView";
 import { WorldBestiaryView } from "./components/WorldBestiaryView";
@@ -32,6 +37,8 @@ export function WorldModule(): JSX.Element {
   const actions = useWorldActions();
   const dungeonsUnlocked = isDungeonSystemUnlocked();
   const towerUnlocked = isTowerSystemUnlocked() || isDevSandboxMode();
+  const dungeonUnlockCount = useFeatureUnlockPending(FEATURE_UNLOCK_VISITS.dungeons);
+  const towerUnlockCount = useFeatureUnlockPending(FEATURE_UNLOCK_VISITS.tower);
   const tabs = BASE_TABS.flatMap((tab) => {
     if (tab.id !== "zones") return [tab];
     return [
@@ -59,11 +66,19 @@ export function WorldModule(): JSX.Element {
         aria-label="Sections du monde"
         style={{ gridTemplateColumns: `repeat(${String(tabs.length)}, minmax(0, 1fr))` }}
       >
-        {tabs.map((tab) => (
-          <button key={tab.id} type="button" className={effectiveTab === tab.id ? "is-active" : ""} aria-pressed={effectiveTab === tab.id} onClick={() => { setActiveTab(tab.id); }}>
-            {tab.label}
-          </button>
-        ))}
+        {tabs.map((tab) => {
+          const attentionCount = tab.id === "dungeons"
+            ? dungeonUnlockCount
+            : tab.id === "tower"
+              ? towerUnlockCount
+              : 0;
+          return (
+            <button key={tab.id} type="button" className={effectiveTab === tab.id ? "is-active" : ""} aria-pressed={effectiveTab === tab.id} onClick={() => { setActiveTab(tab.id); }}>
+              {tab.label}
+              <FeatureAttentionBadge count={attentionCount} />
+            </button>
+          );
+        })}
       </nav>
 
       {effectiveTab === "zones" ? (
