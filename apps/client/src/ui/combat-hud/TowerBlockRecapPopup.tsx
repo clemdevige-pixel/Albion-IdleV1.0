@@ -76,7 +76,9 @@ export function TowerBlockRecapPopup({
           <button
             type="button"
             className="activity-result__text-action"
-            onClick={() => { towerBlockCompletionFlow.resumeWorldExploration(); }}
+            onClick={() => {
+              if (services.abandonTower()) towerBlockCompletionFlow.dismiss();
+            }}
           >
             Quitter la Tour
           </button>
