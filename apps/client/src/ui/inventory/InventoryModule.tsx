@@ -8,6 +8,7 @@ import { ItemContextMenu } from "../../panels/ItemContextMenu";
 import { getItemDisplayName } from "../../panels/ItemVisual";
 import type { StorageRange } from "../../runtime/StorageRuntime";
 import { useGameServices } from "../../state/GameContext";
+import { FEATURE_UNLOCK_VISITS, useFeatureUnlockVisit } from "../attention/usePlayerAttention";
 import { BankModule } from "../bank";
 import {
   createTrackedItemResource,
@@ -73,6 +74,15 @@ export function InventoryModule(): JSX.Element {
   const [activeTab, setActiveTab] = useState<StorageTab>("inventory");
   const [activeFilter, setActiveFilter] = useState<InventoryFilter>("all");
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
+
+  useFeatureUnlockVisit(
+    activeTab === "bank"
+      ? FEATURE_UNLOCK_VISITS.bank
+      : activeFilter === "resources"
+        ? FEATURE_UNLOCK_VISITS.resourceYieldTracking
+        : [],
+  );
+
   const capacityRatio = inventory.capacity === 0
     ? 0
     : Math.min(100, (inventory.occupied / inventory.capacity) * 100);
