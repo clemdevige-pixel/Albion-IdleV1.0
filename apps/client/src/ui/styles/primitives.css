@@ -65,7 +65,71 @@
 .ui-item-slot__visual { display: block; width: 44px; height: 44px; }
 .ui-item-slot__empty { color: #404b5e; font-size: var(--ui-text-xl); }
 .ui-item-slot__meta { position: absolute; right: 4px; bottom: 3px; color: var(--ui-color-accent-hover); font-size: 8px; }
+.ui-item-slot__enchantment { position: absolute; left: 5px; bottom: 5px; }
 .ui-item-slot--disabled { background: repeating-linear-gradient(135deg, #171c25 0 7px, #11161e 7px 14px); cursor: not-allowed; opacity: 0.65; }
 .ui-item-slot__disabled { display: grid; gap: 1px; place-items: center; }
 .ui-item-slot__disabled strong { font-size: var(--ui-text-lg); }
 .ui-item-slot__disabled small { font-size: 8px; text-transform: uppercase; }
+
+.enchantment-diamonds {
+  display: inline-flex;
+  align-items: center;
+}
+
+.enchantment-diamonds__row {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.enchantment-diamonds__diamond {
+  display: block;
+  width: 7px;
+  height: 7px;
+  box-sizing: border-box;
+  border: 1px solid #725079;
+  background: #22232d;
+  box-shadow: inset 0 0 2px rgb(0 0 0 / 70%);
+  transform: rotate(45deg);
+}
+
+.enchantment-diamonds__diamond--filled {
+  border-color: #dc8df6;
+  background: linear-gradient(135deg, #d86cf4, #8b37ba);
+  box-shadow: 0 0 4px rgb(190 82 231 / 45%), inset 0 0 2px rgb(255 255 255 / 35%);
+}
+
+.enchantment-diamonds--slot .enchantment-diamonds__row {
+  gap: 2px;
+}
+
+.enchantment-diamonds--slot .enchantment-diamonds__diamond {
+  width: 5px;
+  height: 5px;
+}
+
+.enchantment-diamonds--tooltip {
+  display: grid;
+  gap: 6px;
+}
+
+.enchantment-diamonds--tooltip .enchantment-diamonds__diamond {
+  width: 9px;
+  height: 9px;
+}
+
+.enchantment-diamonds__label {
+  color: var(--ui-color-text-secondary);
+  font-size: 8px;
+  font-weight: var(--ui-weight-bold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.item-hover-tooltip__enchantment {
+  margin-bottom: 4px;
+  padding: 8px 12px 9px;
+  border: 1px solid var(--ui-color-border-subtle);
+  border-radius: var(--ui-radius-sm);
+  background: #10151e;
+}
