@@ -59,8 +59,23 @@
 }
 
 .ui-academy__main-tabs button {
-  min-height: 34px;
-  font-size: 10px;
+  min-height: 31px;
+  font-size: 9px;
+}
+
+.ui-academy__main-tabs button:hover,
+.ui-academy__sub-tabs button:hover,
+.ui-academy__tier-tabs button:hover,
+.ui-academy__history-toggle:hover {
+  color: #e3d4b4;
+}
+
+.ui-academy__main-tabs button:focus-visible,
+.ui-academy__sub-tabs button:focus-visible,
+.ui-academy__tier-tabs button:focus-visible,
+.ui-academy__history-toggle:focus-visible {
+  color: var(--ui-color-accent);
+  outline: none;
 }
 
 .ui-academy__main-tabs button.is-active,
@@ -73,7 +88,7 @@
 
 .ui-academy__tier-tabs button:disabled {
   opacity: 0.3;
-  cursor: default;
+  cursor: not-allowed;
 }
 
 .ui-academy__section > header,
@@ -293,10 +308,19 @@
   margin-bottom: 5px;
 }
 
-.ui-academy__empty-row {
-  padding: 6px 0;
+.ui-academy__empty-row,
+.ui-academy .ui-island__selection-status {
+  display: grid;
+  min-height: 52px;
+  margin: 0;
+  padding: 8px 0;
+  place-items: center;
+  border: 0;
   color: var(--ui-color-text-muted);
+  background: transparent;
   font-size: 9px;
+  line-height: 1.35;
+  text-align: center;
 }
 
 .ui-academy__active-row {
@@ -429,7 +453,7 @@
   border-color: rgba(130, 109, 81, 0.22);
   background: rgba(45, 40, 34, 0.42);
   color: rgba(206, 193, 172, 0.42);
-  cursor: default;
+  cursor: not-allowed;
 }
 
 @media (max-width: 760px) {
