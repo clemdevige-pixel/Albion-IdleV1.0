@@ -1,5 +1,6 @@
 import { usePlayerAttention, type PlayerAttentionSeverity } from "../attention/usePlayerAttention";
 import { PRIMARY_UI_MODULES, useNavigation } from "../navigation";
+import "./attentionBadges.css";
 
 const ATTENTION_SEVERITY_RANK: Readonly<Record<PlayerAttentionSeverity, number>> = {
   action: 1,
