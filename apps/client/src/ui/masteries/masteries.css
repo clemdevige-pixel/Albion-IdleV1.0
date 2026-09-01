@@ -298,6 +298,27 @@
 
 .ui-mastery-specialization__actions > strong { font-size: var(--ui-text-sm); }
 
+.ui-mastery-specialization__details {
+  min-height: 20px;
+  padding: 1px 6px;
+  border: 1px solid #465268;
+  border-radius: 4px;
+  background: rgba(8, 13, 20, 0.92);
+  color: #aab5c7;
+  font-size: 8px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.ui-mastery-specialization__details:hover,
+.ui-mastery-specialization__details:focus-visible,
+.ui-mastery-specialization__details.is-active {
+  border-color: var(--ui-color-accent);
+  color: var(--ui-color-accent);
+  outline: none;
+}
+
 .ui-mastery-specialization__info {
   display: grid;
   place-items: center;
