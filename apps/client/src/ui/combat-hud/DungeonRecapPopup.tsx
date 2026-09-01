@@ -5,6 +5,7 @@ import { DUNGEON_DEFINITIONS } from "../../data/dungeonContentCatalog.js";
 import { getDungeonLootDefinition } from "../../data/dungeonLootContentCatalog.js";
 import { ItemVisual } from "../../panels/ItemVisual.js";
 import { useGameServices } from "../../state/GameContext.js";
+import { ActivityResultPopup } from "./ActivityResultPopup.js";
 import "./expeditionRecap.css";
 
 function formatNumber(value: number): string {
@@ -83,50 +84,19 @@ export function DungeonRecapPopup({
   ] satisfies readonly RewardRow[]).filter((entry) => entry.value > 0);
 
   return (
-    <div className="expedition-recap-backdrop dungeon-recap-backdrop" role="presentation">
-      <section
-        className="expedition-recap dungeon-recap"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="dungeon-recap-title"
-      >
-        <header className="dungeon-recap__header">
-          <h2 id="dungeon-recap-title">Donjon terminé</h2>
-          <span className="expedition-recap__counter">T{String(recap.tier)}</span>
-        </header>
-
-        <p className="dungeon-recap__summary">
+    <ActivityResultPopup
+      title="Donjon terminé"
+      titleId="dungeon-recap-title"
+      badge={`T${String(recap.tier)}`}
+      summary={(
+        <>
           <strong>{recap.faction}</strong> vaincu
           <span aria-hidden="true">•</span>
           <span>{formatDuration(recap.durationMs)}</span>
-        </p>
-
-        <div className="dungeon-recap__rewards" aria-label="Récompenses obtenues">
-          <h3>Récompenses obtenues</h3>
-          {rewardRows.length > 0 ? (
-            <div className="dungeon-recap__reward-list">
-              {rewardRows.map((reward) => (
-                <div key={reward.key} className="dungeon-recap__reward-row">
-                  <div className="dungeon-recap__reward-identity">
-                    <span className="dungeon-recap__reward-icon" aria-hidden="true">
-                      {reward.currency === "silver" ? (
-                        <span className="dungeon-recap__silver-icon">S</span>
-                      ) : reward.itemId !== undefined ? (
-                        <ItemVisual itemId={reward.itemId} />
-                      ) : null}
-                    </span>
-                    <span>{reward.label}</span>
-                  </div>
-                  <strong>+{formatNumber(reward.value)}</strong>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="dungeon-recap__empty">Aucune récompense obtenue.</p>
-          )}
-        </div>
-
-        <footer className="dungeon-recap__footer">
+        </>
+      )}
+      footer={(
+        <>
           <button
             type="button"
             className="dungeon-recap__action dungeon-recap__action--secondary"
@@ -147,8 +117,33 @@ export function DungeonRecapPopup({
           >
             Reprendre l’exploration
           </button>
-        </footer>
-      </section>
-    </div>
+        </>
+      )}
+    >
+      <div className="dungeon-recap__rewards" aria-label="Récompenses obtenues">
+        <h3>Récompenses obtenues</h3>
+        {rewardRows.length > 0 ? (
+          <div className="dungeon-recap__reward-list">
+            {rewardRows.map((reward) => (
+              <div key={reward.key} className="dungeon-recap__reward-row">
+                <div className="dungeon-recap__reward-identity">
+                  <span className="dungeon-recap__reward-icon" aria-hidden="true">
+                    {reward.currency === "silver" ? (
+                      <span className="dungeon-recap__silver-icon">S</span>
+                    ) : reward.itemId !== undefined ? (
+                      <ItemVisual itemId={reward.itemId} />
+                    ) : null}
+                  </span>
+                  <span>{reward.label}</span>
+                </div>
+                <strong>+{formatNumber(reward.value)}</strong>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="dungeon-recap__empty">Aucune récompense obtenue.</p>
+        )}
+      </div>
+    </ActivityResultPopup>
   );
 }
