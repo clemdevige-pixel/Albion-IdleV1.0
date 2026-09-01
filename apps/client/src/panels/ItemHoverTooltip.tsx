@@ -55,17 +55,17 @@ export function ItemHoverTooltip({
           }}
           role="tooltip"
         >
-          {showEnchantmentLevel && enchantmentOverride !== undefined && (
-            <div className="item-hover-tooltip__enchantment">
-              <EnchantmentDiamonds level={enchantmentOverride} variant="tooltip" showLabel />
-            </div>
-          )}
           <ItemTooltip
             itemId={itemId}
             quantity={quantity}
             instanceId={instanceId}
             enchantmentOverride={enchantmentOverride}
           />
+          {showEnchantmentLevel && enchantmentOverride !== undefined && (
+            <span className="item-hover-tooltip__enchantment-inline">
+              <EnchantmentDiamonds level={enchantmentOverride} variant="tooltip" />
+            </span>
+          )}
           {assemblyRecipe !== undefined && requiredFragments !== undefined && (
             <div className="item-tooltip__hint">
               Double-clic dans l’inventaire : assembler {String(requiredFragments)} fragments en 1 {assemblyRecipe.name}.
