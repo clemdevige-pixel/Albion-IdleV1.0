@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { WOOD_GATHERING_MASTERY_ID } from "../../data/progressionContentCatalog";
 import { buildMasteriesModel } from "./masteryModels";
 
 const mastery = (id: string, displayName: string, category: string, level = 1) => ({
@@ -31,6 +32,21 @@ describe("masteryModels", () => {
     expect(daggers?.name).toBe("Dagues");
     expect(daggers?.specializations.map((entry) => entry.id)).toEqual(["mastery_dagger_pair"]);
     expect(daggers?.specializations[0]?.iconAsset).toBe("icons/armes/pair dagger.png");
+  });
+
+  it("surfaces the next authored resource unlock for gathering mastery", () => {
+    const model = buildMasteriesModel({
+      progression: {
+        totalFame: 0,
+        overflowPool: 0,
+        masteries: [mastery(WOOD_GATHERING_MASTERY_ID, "Récolte du bois", "gathering", 3)],
+      },
+      workers: { capacity: 0, professionCapacity: 0, recruitmentCost: 0, workers: [] },
+    });
+
+    const wood = model.categories.gathering.find((family) => family.id === WOOD_GATHERING_MASTERY_ID);
+    expect(wood?.bonuses).toContain("Prochaine ressource : Bois de cèdre (T5) au niv. 7");
+    expect(wood?.bonuses).not.toContain("1 ressource par cycle");
   });
 
   it("projects faction masteries with their current yield bonus and no specialization layer", () => {
