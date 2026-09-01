@@ -71,6 +71,7 @@ export function WorldModule(): JSX.Element {
     <section className="ui-world">
       <nav
         className="ui-world__tabs"
+        role="tablist"
         aria-label="Sections du monde"
         style={{ gridTemplateColumns: `repeat(${String(tabs.length)}, minmax(0, 1fr))` }}
       >
@@ -81,7 +82,14 @@ export function WorldModule(): JSX.Element {
               ? towerUnlockCount
               : 0;
           return (
-            <button key={tab.id} type="button" className={effectiveTab === tab.id ? "is-active" : ""} aria-pressed={effectiveTab === tab.id} onClick={() => { setActiveTab(tab.id); }}>
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              className={effectiveTab === tab.id ? "is-active" : ""}
+              aria-selected={effectiveTab === tab.id}
+              onClick={() => { setActiveTab(tab.id); }}
+            >
               {tab.label}
               <FeatureAttentionBadge count={attentionCount} />
             </button>
