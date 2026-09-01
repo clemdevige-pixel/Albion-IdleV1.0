@@ -6,6 +6,7 @@ import { DUNGEON_DEFINITIONS } from "../../data/dungeonContentCatalog.js";
 import { getDungeonLootDefinition } from "../../data/dungeonLootContentCatalog.js";
 import { ItemVisual } from "../../panels/ItemVisual.js";
 import { useGameServices } from "../../state/GameContext.js";
+import { useNavigation } from "../navigation/useNavigation.js";
 import { ActivityResultPopup } from "./ActivityResultPopup.js";
 
 function formatNumber(value: number): string {
@@ -41,6 +42,7 @@ interface RewardRow {
 
 function DungeonFailurePopup({ recap }: { readonly recap: Extract<ActivityFailureRecapModel, { kind: "dungeon" }> }): JSX.Element {
   const services = useGameServices();
+  const navigation = useNavigation();
   const replayAccess = services.getDungeonState().getAccess(recap.dungeonDefinitionId);
   const replayUnavailable = replayUnavailableLabel(replayAccess);
   const dungeonDefinition = DUNGEON_DEFINITIONS.find((definition) => definition.id === recap.dungeonDefinitionId);
@@ -106,7 +108,9 @@ function DungeonFailurePopup({ recap }: { readonly recap: Extract<ActivityFailur
             type="button"
             className="dungeon-recap__action dungeon-recap__action--primary"
             onClick={() => {
-              if (services.resumeExploration()) activityFailureFlow.dismiss();
+              if (!services.resumeExploration()) return;
+              activityFailureFlow.dismiss();
+              navigation.returnToDashboard();
             }}
           >
             Reprendre l’exploration
@@ -144,6 +148,7 @@ function DungeonFailurePopup({ recap }: { readonly recap: Extract<ActivityFailur
 
 function TowerFailurePopup({ recap }: { readonly recap: Extract<ActivityFailureRecapModel, { kind: "tower" }> }): JSX.Element {
   const services = useGameServices();
+  const navigation = useNavigation();
   const towerAccess = services.getTowerState().access;
 
   return (
@@ -177,7 +182,9 @@ function TowerFailurePopup({ recap }: { readonly recap: Extract<ActivityFailureR
             type="button"
             className="dungeon-recap__action dungeon-recap__action--primary"
             onClick={() => {
-              if (services.resumeExploration()) activityFailureFlow.dismiss();
+              if (!services.resumeExploration()) return;
+              activityFailureFlow.dismiss();
+              navigation.returnToDashboard();
             }}
           >
             Reprendre l’exploration
