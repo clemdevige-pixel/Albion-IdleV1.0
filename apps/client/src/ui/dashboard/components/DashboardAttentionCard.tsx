@@ -22,6 +22,14 @@ const SEVERITY_RANK: Readonly<Record<PlayerAttentionSeverity, number>> = {
 
 function resolveFeatureView(unlockId: string): string | undefined {
   switch (unlockId) {
+    case RESEARCH_UNLOCK_IDS.silverExpeditionTier4:
+    case RESEARCH_UNLOCK_IDS.factionExpeditionTier4:
+    case RESEARCH_UNLOCK_IDS.secondExpeditionSlot:
+      return "academy_expeditions";
+    case RESEARCH_UNLOCK_IDS.advancedWorkerOrganization:
+      return "worker_house";
+    case RESEARCH_UNLOCK_IDS.instantRefining:
+      return "refining";
     case RESEARCH_UNLOCK_IDS.enchantmentService:
       return "enchant";
     case RESEARCH_UNLOCK_IDS.blackMarket:
@@ -40,6 +48,12 @@ function resolveFeatureView(unlockId: string): string | undefined {
   }
 }
 
+function resolveSignalView(signalId: string): string | undefined {
+  if (signalId === "worker_idle") return "worker_attention";
+  if (signalId === "expedition_idle") return "academy_expeditions";
+  return undefined;
+}
+
 function destinationLabel(moduleId: UiModuleId, view?: string): string {
   if (moduleId === UI_MODULE_IDS.inventory && view === "bank") return "Banque";
   if (moduleId === UI_MODULE_IDS.inventory && view === "resources") return "Ressources";
@@ -47,6 +61,10 @@ function destinationLabel(moduleId: UiModuleId, view?: string): string {
   if (moduleId === UI_MODULE_IDS.merchant && view === "black_market") return "Marché Noir";
   if (moduleId === UI_MODULE_IDS.world && view === "dungeons") return "Donjons";
   if (moduleId === UI_MODULE_IDS.world && view === "tower") return "Tour";
+  if (moduleId === UI_MODULE_IDS.island && view === "academy_expeditions") return "Expéditions";
+  if (moduleId === UI_MODULE_IDS.island && view === "worker_house") return "Maison des ouvriers";
+  if (moduleId === UI_MODULE_IDS.island && view === "worker_attention") return "Ouvrier concerné";
+  if (moduleId === UI_MODULE_IDS.island && view === "refining") return "Raffinage";
   if (moduleId === UI_MODULE_IDS.inventory) return "Inventaire";
   if (moduleId === UI_MODULE_IDS.island) return "Île";
   if (moduleId === UI_MODULE_IDS.merchant) return "Marchand";
@@ -65,6 +83,7 @@ export function DashboardAttentionCard(): JSX.Element | null {
       label: signal.label,
       severity: signal.severity,
       moduleId: signal.moduleId,
+      view: resolveSignalView(signal.id),
     }));
 
   for (const unlock of attention.pendingFeatureUnlocks) {
