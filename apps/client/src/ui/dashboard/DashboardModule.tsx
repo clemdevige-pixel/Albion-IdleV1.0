@@ -6,6 +6,7 @@ import {
 } from "react";
 import "./dashboard.css";
 import "./DashboardSortable.css";
+import "./DashboardGroups.css";
 import "./components/DashboardUtilityCards.css";
 import {
   isDashboardSectionId,
