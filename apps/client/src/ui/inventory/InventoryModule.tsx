@@ -1,4 +1,4 @@
-import { useCallback, useState, type MouseEvent } from "react";
+import { useCallback, useEffect, useState, type MouseEvent } from "react";
 import { resolveEquipmentInfo } from "../../data/itemContentCatalog";
 import { isRelicInventoryItem } from "../../data/relicContentCatalog";
 import { RESEARCH_IDS } from "../../data/researchContentCatalog.js";
@@ -21,6 +21,7 @@ import {
   isTrackableResourceItem,
   useResourceTracking,
 } from "../dashboard/ResourceTrackingContext";
+import { useNavigation } from "../navigation";
 import { ItemGrid } from "../shared";
 import { useInventoryActions } from "./useInventoryActions";
 import { useInventoryData } from "./useInventoryData";
@@ -73,6 +74,7 @@ export function InventoryModule(): JSX.Element {
   const actions = useInventoryActions();
   const services = useGameServices();
   const tracking = useResourceTracking();
+  const { activeView } = useNavigation();
   const bankExpansion = services.getBankExpansionModel();
   const yieldTrackingUnlocked = services.getAcademyModel().research.some(
     (research) => research.id === RESEARCH_IDS.yieldAnalysis && research.state === "completed",
@@ -82,6 +84,17 @@ export function InventoryModule(): JSX.Element {
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
   const bankUnlockCount = useFeatureUnlockPending(FEATURE_UNLOCK_VISITS.bank);
   const yieldTrackingUnlockCount = useFeatureUnlockPending(FEATURE_UNLOCK_VISITS.resourceYieldTracking);
+
+  useEffect(() => {
+    if (activeView === "bank") {
+      setActiveTab("bank");
+      setContextMenu(null);
+    } else if (activeView === "resources") {
+      setActiveTab("inventory");
+      setActiveFilter("resources");
+      setContextMenu(null);
+    }
+  }, [activeView]);
 
   useFeatureUnlockVisit(activeTab === "bank" ? FEATURE_UNLOCK_VISITS.bank : []);
 
