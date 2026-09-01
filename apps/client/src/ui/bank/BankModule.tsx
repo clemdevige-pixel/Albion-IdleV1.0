@@ -1,7 +1,7 @@
 import { useEffect, useState, type DragEvent, type MouseEvent } from "react";
 import { RESEARCH_IDS } from "../../data/researchContentCatalog.js";
 import type { InventorySlotVM } from "../../game/GameBridge";
-import { getItemDefinition, getItemDisplayName } from "../../panels/ItemVisual";
+import { getItemDisplayName } from "../../panels/ItemVisual";
 import type { StorageRange } from "../../runtime/StorageRuntime";
 import { useGameServices } from "../../state/GameContext";
 import {
@@ -10,6 +10,7 @@ import {
   useResourceTracking,
 } from "../dashboard/ResourceTrackingContext";
 import { ItemGrid } from "../shared";
+import { getStorageItemCategory } from "../shared/storageItemCategory";
 import { useBankData } from "./useBankData";
 import "../shared/storageModule.css";
 
@@ -37,20 +38,12 @@ const BANK_FILTERS: readonly { readonly id: BankFilter; readonly label: string }
 ];
 
 const ROMAN_TAB_LABELS = ["I", "II", "III", "IV", "V"] as const;
-
-function isSpecialBankItem(itemId: string): boolean {
-  return itemId.startsWith("item_resource_dungeon_key_")
-    || itemId.startsWith("item_resource_artifact_")
-    || itemId.startsWith("item_resource_key_fragment_");
-}
+const CAPACITY_WARNING_RATIO = 0.85;
 
 function matchesBankFilter(slot: InventorySlotVM, filter: BankFilter): boolean {
   if (filter === "all") return true;
   const itemId = slot.itemId;
-  if (itemId === undefined) return false;
-  if (filter === "equipment") return getItemDefinition(itemId) !== undefined;
-  if (filter === "special") return isSpecialBankItem(itemId);
-  return getItemDefinition(itemId) === undefined && !isSpecialBankItem(itemId);
+  return itemId !== undefined && getStorageItemCategory(itemId) === filter;
 }
 
 function readDraggedBankPosition(event: DragEvent<HTMLElement>): number | undefined {
@@ -110,9 +103,9 @@ export function BankModule({
     (count, slot) => count + (slot.itemId === undefined ? 0 : 1),
     0,
   );
-  const capacityRatio = expansion.tabCapacity === 0
-    ? 0
-    : Math.min(100, (activeTabOccupied / expansion.tabCapacity) * 100);
+  const capacityRatio = expansion.tabCapacity === 0 ? 0 : activeTabOccupied / expansion.tabCapacity;
+  const capacityPercent = Math.min(100, capacityRatio * 100);
+  const capacityState = capacityRatio >= 1 ? "full" : capacityRatio >= CAPACITY_WARNING_RATIO ? "warning" : "normal";
   const filteredSlots = activeTabSlots.filter((slot) => matchesBankFilter(slot, activeFilter));
   const activeLabel = ROMAN_TAB_LABELS[activeBankTab - 1] ?? String(activeBankTab);
 
@@ -168,7 +161,7 @@ export function BankModule({
         </div>
       )}
 
-      <section className="storage-module__summary" aria-label={`Capacité de la banque ${activeLabel}`}>
+      <section className={`storage-module__summary storage-module__summary--${capacityState}`} aria-label={`Capacité de la banque ${activeLabel}`}>
         <div className="storage-module__summary-row">
           <div>
             <small>Stockage sécurisé</small>
@@ -177,8 +170,13 @@ export function BankModule({
           <strong>{String(activeTabOccupied)} <small>/ {String(expansion.tabCapacity)}</small></strong>
         </div>
         <div className="storage-module__capacity-track" aria-hidden="true">
-          <span className="storage-module__capacity-fill" style={{ width: `${String(capacityRatio)}%` }} />
+          <span className="storage-module__capacity-fill" style={{ width: `${String(capacityPercent)}%` }} />
         </div>
+        {capacityState !== "normal" && (
+          <small className="storage-module__capacity-state">
+            {capacityState === "full" ? "Banque pleine" : "Banque presque pleine"}
+          </small>
+        )}
       </section>
 
       <div className="storage-module__toolbar">
@@ -213,6 +211,7 @@ export function BankModule({
             slots={filteredSlots}
             label={`Objets dans la banque ${activeLabel} · filtre ${BANK_FILTERS.find((filter) => filter.id === activeFilter)?.label ?? "Tous"}`}
             interactive
+            interactionHint="Double-cliquez pour transférer vers l’inventaire. Glissez-déposez pour organiser."
             draggable
             {...(onMove === undefined ? {} : { onItemDrop: onMove })}
             onItemDoubleClick={(_event, slot) => {
