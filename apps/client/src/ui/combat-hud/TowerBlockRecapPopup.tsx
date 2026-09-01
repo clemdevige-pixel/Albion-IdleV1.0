@@ -4,6 +4,7 @@ import { towerBlockCompletionFlow } from "../../runtime/TowerBlockCompletionFlow
 import type { TowerAccessState } from "../../state/TowerNavigationActions.js";
 import { useGameBridge, useGameServices } from "../../state/GameContext.js";
 import { CharacterEquipmentPanel } from "../character/components/CharacterEquipmentPanel.js";
+import { useNavigation } from "../navigation/useNavigation.js";
 import { ActivityResultPopup } from "./ActivityResultPopup.js";
 import "./towerBlockRecap.css";
 
@@ -33,6 +34,7 @@ export function TowerBlockRecapPopup({
 }): JSX.Element {
   useGameBridge();
   const services = useGameServices();
+  const navigation = useNavigation();
   const access = services.getTowerState().access;
   const completedFaction = factionName(recap.factionId);
   const nextFaction = factionName(recap.nextFactionId);
@@ -68,10 +70,12 @@ export function TowerBlockRecapPopup({
             type="button"
             className="activity-result__text-action"
             onClick={() => {
-              if (services.abandonTower()) towerBlockCompletionFlow.dismiss();
+              if (!services.abandonTower()) return;
+              towerBlockCompletionFlow.dismiss();
+              navigation.returnToDashboard();
             }}
           >
-            Quitter la Tour
+            Retour à l’exploration
           </button>
         </>
       )}
