@@ -1,11 +1,18 @@
+import { useSyncExternalStore } from "react";
+import { activityFailureFlow } from "../runtime/ActivityFailureFlow.js";
 import { useCombatHudActions, useCombatStateUiModel } from "../ui/combat-hud/combatHudSelectors";
 
 /** Defeat recovery remains an explicit player action. */
 export function CombatStateBar(): JSX.Element | null {
   const { combatState, isGathering } = useCombatStateUiModel();
   const actions = useCombatHudActions();
+  const activityFailure = useSyncExternalStore(
+    activityFailureFlow.subscribe,
+    activityFailureFlow.getSnapshot,
+    () => null,
+  );
 
-  if (isGathering || combatState !== "defeat") return null;
+  if (isGathering || combatState !== "defeat" || activityFailure !== null) return null;
 
   return (
     <div className="combat-state-group combat-state-group--defeat">
