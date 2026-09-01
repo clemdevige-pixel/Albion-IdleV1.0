@@ -7,18 +7,17 @@ export interface ItemContextMenuBankDestination {
 }
 
 export interface ItemContextMenuProps {
-  readonly position?: number;
+  readonly position: number;
   readonly x: number;
   readonly y: number;
   readonly onClose: () => void;
   readonly onEquip?: ((position: number) => void) | undefined;
-  readonly onUnequip?: (() => void) | undefined;
   readonly bankDestinations?: readonly ItemContextMenuBankDestination[] | undefined;
   readonly onMoveToBank?: ((position: number, tabNumber: number) => void) | undefined;
 }
 
 /**
- * Shared right-click context menu for item actions.
+ * Right-click context menu for storage item actions.
  */
 export function ItemContextMenu({
   position,
@@ -26,7 +25,6 @@ export function ItemContextMenu({
   y,
   onClose,
   onEquip,
-  onUnequip,
   bankDestinations = [],
   onMoveToBank,
 }: ItemContextMenuProps): JSX.Element {
@@ -53,7 +51,7 @@ export function ItemContextMenu({
       className="context-menu"
       style={{ left: `${String(x + 12)}px`, top: `${String(y + 12)}px` }}
     >
-      {onEquip !== undefined && position !== undefined && (
+      {onEquip !== undefined && (
         <button
           type="button"
           className="context-menu__item"
@@ -62,16 +60,7 @@ export function ItemContextMenu({
           Equiper
         </button>
       )}
-      {onUnequip !== undefined && (
-        <button
-          type="button"
-          className="context-menu__item"
-          onClick={onUnequip}
-        >
-          Déséquiper
-        </button>
-      )}
-      {onMoveToBank !== undefined && position !== undefined && bankDestinations.map((destination) => (
+      {onMoveToBank !== undefined && bankDestinations.map((destination) => (
         <button
           key={destination.tabNumber}
           type="button"
