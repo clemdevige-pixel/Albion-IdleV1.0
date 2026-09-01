@@ -99,7 +99,36 @@ export function createResearchFoundation(dependencies: ResearchFoundationDepende
     });
   }
 
+  const reconcileConsumedResearchItems = (): void => {
+    for (const definition of RESEARCH_DEFINITIONS) {
+      const state = researchService.getEntryState(definition.id);
+      if (state !== "active" && state !== "completed") continue;
+
+      for (const requirement of definition.requirements) {
+        if (requirement.type !== "relic_charged" || requirement.consumeOnStart !== true) continue;
+        const relicDefinition = RELIC_DEFINITIONS.find((candidate) => (
+          candidate.id === requirement.relicId
+        ));
+        if (relicDefinition === undefined) continue;
+
+        for (const ownerId of dependencies.inventoryManager.listInventories()) {
+          for (const slot of dependencies.inventoryManager.findEntriesByItemId(
+            ownerId,
+            relicDefinition.inventoryItemId,
+          )) {
+            const removed = dependencies.inventoryManager.removeEntryAt(ownerId, slot.position);
+            if (!removed.ok) {
+              throw new Error(`Legacy consumed Research item cleanup failed for ${relicDefinition.inventoryItemId}`);
+            }
+          }
+        }
+      }
+    }
+  };
+
   const reconcileResearchEffects = (): void => {
+    reconcileConsumedResearchItems();
+
     if (!researchService.hasUnlock(RESEARCH_UNLOCK_IDS.dungeonRelicAnalyzed)) return;
     if (dependencies.relicService.isExamined(DUNGEON_RELIC_ID)) return;
     const progress = dependencies.relicService.getProgress(DUNGEON_RELIC_ID);
