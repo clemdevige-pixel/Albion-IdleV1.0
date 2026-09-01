@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { FACTION_CAPE_FACTIONS, getTowerBlockSilverReward } from "@game/data";
 import { getTowerFloorDefinition } from "@game/gameplay";
 import type { GameBridgeState } from "../../../game/GameBridge.js";
@@ -72,11 +72,7 @@ export function WorldTowerView(): JSX.Element {
   } = useGameServices();
   const navigation = useNavigation();
   const [rewardsOpen, setRewardsOpen] = useState(false);
-
-  const returnToExploration = (): void => {
-    if (!abandonTower()) return;
-    navigation.returnToDashboard();
-  };
+  const [returnRequested, setReturnRequested] = useState(false);
 
   const selectPresentation = useCallback((state: GameBridgeState): TowerPresentationModel => {
     const tower = getTowerState();
@@ -96,6 +92,18 @@ export function WorldTowerView(): JSX.Element {
   }, [getTowerState]);
 
   const presentation = useGameUiSelector(selectPresentation, sameTowerPresentation);
+
+  useEffect(() => {
+    if (!returnRequested || presentation.engaged) return;
+    setReturnRequested(false);
+    navigation.returnToDashboard();
+  }, [navigation, presentation.engaged, returnRequested]);
+
+  const returnToExploration = (): void => {
+    if (returnRequested || !abandonTower()) return;
+    setReturnRequested(true);
+  };
+
   const towerState = getTowerState();
   const floor = getTowerFloorDefinition(
     presentation.currentFloor,
@@ -144,7 +152,7 @@ export function WorldTowerView(): JSX.Element {
               aria-controls={rewardsId}
               onClick={() => { setRewardsOpen((open) => !open); }}
             >i</button>
-            <span>{presentation.active ? "En cours" : presentation.intermission ? "Préparation" : presentation.pendingStart ? "Après ce combat" : "Prêt"}</span>
+            <span>{returnRequested ? "Sortie après ce combat" : presentation.active ? "En cours" : presentation.intermission ? "Préparation" : presentation.pendingStart ? "Après ce combat" : "Prêt"}</span>
           </div>
         </header>
 
@@ -192,19 +200,21 @@ export function WorldTowerView(): JSX.Element {
         </div>
 
         <footer>
-          <p>{presentation.active
-            ? "Retourner à l’exploration quitte la tentative et conserve la progression validée."
-            : presentation.intermission
-              ? accessMessage ?? "Préparez votre équipement avant de lancer le prochain bloc."
-              : presentation.pendingStart
-                ? "La Tour démarrera à la fin de l’ennemi actuel."
-                : accessMessage ?? "L’entrée peut attendre la fin du combat World en cours."}</p>
+          <p>{returnRequested
+            ? "Sortie demandée : l’ennemi courant sera terminé avant le retour à l’exploration."
+            : presentation.active
+              ? "Retourner à l’exploration quitte la tentative et conserve la progression validée."
+              : presentation.intermission
+                ? accessMessage ?? "Préparez votre équipement avant de lancer le prochain bloc."
+                : presentation.pendingStart
+                  ? "La Tour démarrera à la fin de l’ennemi actuel."
+                  : accessMessage ?? "L’entrée peut attendre la fin du combat World en cours."}</p>
           {presentation.active ? (
-            <button type="button" className="is-danger" onClick={returnToExploration}>Retour à l’exploration</button>
+            <button type="button" className="is-danger" disabled={returnRequested} onClick={returnToExploration}>{returnRequested ? "Sortie après ce combat…" : "Retour à l’exploration"}</button>
           ) : presentation.pendingStart ? null : presentation.intermission ? (
             <div className="world-tower__intermission-actions">
-              <button type="button" className="is-danger" onClick={returnToExploration}>Retour à l’exploration</button>
-              <button type="button" disabled={!canStart} onClick={() => { startTower(); }}>Lancer le bloc</button>
+              <button type="button" className="is-danger" disabled={returnRequested} onClick={returnToExploration}>{returnRequested ? "Sortie…" : "Retour à l’exploration"}</button>
+              <button type="button" disabled={!canStart || returnRequested} onClick={() => { startTower(); }}>Lancer le bloc</button>
             </div>
           ) : (
             <button type="button" disabled={!canStart} onClick={() => { startTower(); }}>Entrer</button>
@@ -220,7 +230,7 @@ export function WorldTowerView(): JSX.Element {
               key={checkpoint}
               type="button"
               className={checkpoint === presentation.checkpointFloor ? "is-active" : ""}
-              disabled={presentation.engaged || presentation.pendingStart}
+              disabled={presentation.engaged || presentation.pendingStart || returnRequested}
               onClick={() => { selectTowerCheckpoint(checkpoint); }}
             >
               Étage {checkpoint}
