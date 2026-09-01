@@ -198,6 +198,12 @@
     --ui-world-strip-height: 76px;
   }
 
+  .ui-shell__bottom {
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+  }
+
   .ui-shell__bottom .permanent-bottom-nav {
     display: flex;
     justify-content: flex-start;
