@@ -2,18 +2,19 @@
 
 Date: 2026-09-01
 Branch: `agent/albion-idle-development`
-Baseline HEAD at handoff creation: `ff29672dee559107071f36389409296baf385555`
-Status: **VALIDATED ROADMAP — implementation not started for the roadmap below**
+Original roadmap baseline: `ff29672dee559107071f36389409296baf385555`
+Implementation baseline after validated P1.2: `20322a9740134d6c243f782c55ba1c25af5a36a4`
+Status: **P0.1 + P0.2 + P1.1 + P1.2 VALIDATED — next phase: P1.3 Combat HUD audit**
 
 ---
 
 ## 1. Purpose
 
-This document preserves the validated UI/UX direction in case the work is resumed in another chat/session.
+This document is the authoritative handoff for the current UI/UX audit roadmap.
 
-It is not a redesign brief. The current global shell is considered structurally sound and must be preserved unless a future audit proves otherwise.
+It is not a redesign brief. The current global shell remains structurally sound and must be preserved unless a later audit proves otherwise.
 
-The objective is to improve clarity, player guidance, consistency and moment-to-moment usability without introducing a parallel UI architecture.
+Objective: improve clarity, player guidance, consistency and moment-to-moment usability without introducing a parallel UI architecture.
 
 ---
 
@@ -28,49 +29,145 @@ The existing UI Bible remains authoritative, especially:
 - `UI_BIBLE/07_RIGHT_PANEL.txt`
 - `UI_BIBLE/17_TOOLTIPS.txt`
 
-Key rules that must not be broken:
+Rules to preserve:
 
 1. Single-screen experience.
-2. Game World remains visible and is visually central.
-3. Features integrate into the contextual Right Panel instead of creating separate full screens.
-4. Reuse shared components and existing design-system primitives.
-5. Readability has priority over decoration.
-6. Progressive disclosure: essential information visible, detailed information on demand.
-7. Avoid unnecessary layout shifts and parallel interaction systems.
-8. New UI must remain compatible with future systems without restructuring the shell.
+2. Game World remains visible and visually central.
+3. Features integrate into the contextual Right Panel.
+4. Reuse shared components and existing runtime/domain sources.
+5. Readability before decoration.
+6. Progressive disclosure: essential information visible, detail on demand.
+7. No unnecessary layout shifts or parallel interaction systems.
+8. UI-specific state must not duplicate authoritative gameplay/runtime state.
 
-Current shell architecture to preserve:
+Shell contract:
 
 `Header -> Game World + Right Panel -> Bottom Navigation`
 
-Do **not** introduce a new global sidebar, fullscreen module pages, floating windows everywhere, or a second navigation system without explicit revalidation.
+Do not introduce a global sidebar, fullscreen module pages, excessive floating windows or a second navigation system without explicit revalidation.
 
 ---
 
-## 3. Recently validated UI work — do not regress
+# 3. COMPLETED + VALIDATED
 
-The Inventory / Bank / Equipment polish completed immediately before this roadmap is considered validated.
+## P0.1 — Global Attention System — DONE
 
-### Inventory / Bank / Equipment
+A shared/data-driven attention layer now drives Dashboard/navigation attention instead of independent module-specific detection.
+
+Validated behavior includes:
+
+- inventory capacity warnings;
+- worker idle/paused attention;
+- persistent `no expedition active` attention once expeditions are available;
+- enchantment-ready attention with per-item dismissal behavior;
+- one-shot feature unlock attention derived from real research unlocks;
+- parent-module badge + local sub-feature badge for relevant unlocks;
+- feature acknowledgement only when the actual destination is visited where possible;
+- yield-tracking unlock acknowledged on first real favorite/unfavorite action, not on opening the screen;
+- acknowledgements persisted through the existing Dashboard UI save provider rather than a parallel local-storage system.
+
+Major unlock destinations covered include:
+
+- Expeditions / faction expeditions / second expedition slot;
+- Enchantment;
+- Black Market;
+- resource yield tracking;
+- advanced Bank management;
+- worker organization;
+- instant refining;
+- Dungeons + faction rune world drop;
+- Tower.
+
+Do not regress this into independent per-screen badge logic.
+
+---
+
+## P0.2 — Interaction Contract — DONE
+
+Validated interaction grammar:
+
+- click -> select / inspect;
+- double-click -> primary/default action where relevant;
+- right-click -> contextual actions;
+- drag & drop -> move / organize where spatial movement exists;
+- hover -> information.
+
+Important validated cases:
+
+- Inventory / Bank item movement and contextual actions;
+- Character equipped-item right-click -> unequip action;
+- Character equipment picker closes with Escape and outside click;
+- Merchant / Masteries / Island / World audited and not forced into artificial right-click/double-click behavior when it adds no value.
+
+---
+
+## P1.1 — Dashboard cockpit — DONE
+
+The existing modular/reorderable Dashboard architecture was preserved.
+
+Current hierarchy:
+
+1. **Priorités**
+2. **Activité en cours**
+3. **Rendement & suivi**
+
+Validated details:
+
+- `Priorités` consumes the shared attention source;
+- direct CTA/deep-links open the real destination where supported;
+- Expedition idle -> `Île > Académie > Expéditions`;
+- worker attention -> relevant gathering building, with Worker House fallback;
+- Enchantment / Black Market / Bank / Resources / Dungeons / Tower deep-links supported;
+- Black Market cargo transit is shown in **Activité en cours** with progress/ETA and direct CTA;
+- active research/expeditions are separated from unresolved priorities;
+- Production belongs to **Rendement & suivi**;
+- Production card displays active workers by resource family: up to 4 resource rows x 2 workers;
+- one worker in a family uses the full row width; two workers use 50/50;
+- all 8 currently supported active workers can be visible simultaneously;
+- non-worker production activities remain separated below when relevant;
+- the attempted extra compaction of Rendement/Production was reverted; the earlier validated spacing remains;
+- saved Dashboard section order remains authoritative within its groups.
+
+---
+
+## P1.2 — Internal module hierarchy — DONE
+
+No global `ModuleLayout` wrapper was introduced because the existing architecture was already sufficiently coherent.
+
+Validated targeted fixes:
+
+- Character: redundant `Équipement` internal heading removed;
+- Merchant: tab semantics normalized (`tablist` / `tab` / selected state);
+- World: same semantic tab normalization;
+- Masteries: real 3-category grid corrected from 2 columns to 3;
+- Island overview: redundant `Île du joueur` pre-title removed; summary starts directly with level/status;
+- Academy: main tabs visually aligned with other modules; hover/focus/disabled/empty states normalized;
+- Worker House / Refining / Crafting audited and intentionally left structurally unchanged because their hierarchy/disabled states were already coherent.
+
+Principle confirmed: standardize shared grammar, not every screen's shape.
+
+---
+
+# 4. PREVIOUS VALIDATED WORK — DO NOT REGRESS
+
+## Inventory / Bank / Equipment
 
 - Bank tabs are ranges of one shared Bank inventory, not separate storage owners.
-- Drag item onto Bank tab -> move to the first compatible destination in that tab.
-- Right-click actions support moving items between Bank tabs.
-- Inventory right-click supports moving items directly to a Bank tab.
-- Storage destination logic is centralized in runtime rather than duplicated in React.
-- Compatible stack merge is considered before an empty destination slot.
-- Equipment/Bank/Inventory flows remain on the existing storage architecture.
+- Drag item onto Bank tab -> move to first compatible destination.
+- Right-click can move Bank items between tabs.
+- Inventory right-click can move items directly to a Bank tab.
+- Storage destination logic remains centralized in runtime.
+- Compatible stack merge is considered before empty slots.
+- Equipment/Bank/Inventory stay on the existing storage architecture.
 
-### Relic handling
+## Relic handling
 
-- The sanctuary/dungeon relic is consumed when the corresponding analysis research starts.
-- Legacy saves with the research already active/completed reconcile and remove the orphaned physical relic.
+- Sanctuary/dungeon relic is consumed when the corresponding analysis research starts.
+- Legacy saves with research already active/completed reconcile the orphaned physical relic.
 
-### Enchantment visual language
+## Enchantment item language
 
-Shared enchantment diamonds are now part of the item language.
-
-Color contract must remain aligned with the existing enchantment code:
+Color contract:
 
 - `.0` grey
 - `.1` green
@@ -78,340 +175,86 @@ Color contract must remain aligned with the existing enchantment code:
 - `.3` purple
 - `.4` yellow
 
-Validated placement:
+Placement:
 
-- item slot: `Tn.x` bottom-left, enchantment diamonds bottom-right when they do not collide with quantity;
-- tooltip: enchantment diamonds on the item title line rather than in a separate large block;
-- equipment slots use the same visual scale language as inventory slots.
+- item slot: `Tn.x` bottom-left, enchantment diamonds bottom-right when compatible with quantity;
+- tooltip: diamonds on the item title line;
+- equipment slots follow the same item-scale language as inventory slots.
 
-### Item tooltips
+## Tooltips
 
-- Tooltip content remains shared.
-- Right-click suppresses the hover tooltip while the contextual menu is open.
-- Tooltip placement is adaptive and attempts to avoid covering the hovered item / inventory grid / equipment picker when another valid location exists.
-- Do not revert to simple `cursor + offset` positioning.
-
----
-
-## 4. Global audit conclusion
-
-The current problem is **not** that Albion Idle needs a new global interface.
-
-The main remaining UX weakness is that many systems work individually, but the game does not yet provide a strong global hierarchy answering:
-
-> **What deserves the player's attention right now?**
-
-The next UI/UX work should therefore prioritize player attention, consistency and actionability over visual redesign.
+- Shared tooltip content remains authoritative.
+- Right-click suppresses the hover tooltip while contextual menu is open.
+- Tooltip placement is adaptive and attempts not to cover the hovered item/inventory/equipment picker when another valid placement exists.
 
 ---
 
-# 5. VALIDATED ROADMAP
+# 5. NEXT PHASE
 
-Implementation order is important.
-
-## P0.1 — Global Attention System
+## P1.3 — Dedicated Combat HUD readability audit — NEXT
 
 ### Goal
 
-Create a shared, data-driven representation of meaningful player attention states.
+Audit before changing anything. Do not blindly restyle the Combat HUD and do not alter combat gameplay under the guise of UI work.
 
-The player should be able to understand that something became actionable without manually opening every module.
-
-Examples of valid attention events/signals:
-
-- research completed / research ready for action;
-- enchantment available;
-- inventory close to/full capacity;
-- worker idle / meaningful Island action available;
-- production/refining/crafting action requiring attention;
-- important progression unlock;
-- other already-existing systems becoming actionable.
-
-These examples are **not** permission to invent new gameplay states. Only expose signals backed by real runtime data.
-
-### Architecture direction
-
-Prefer one shared/data-driven source, conceptually similar to:
-
-`PlayerAttentionState`
-
-or an equivalent existing architecture-compatible abstraction.
-
-It should be consumable by:
-
-- Dashboard;
-- bottom navigation badges/markers;
-- non-blocking notifications where appropriate.
-
-Do not implement each module with its own independent badge logic if the same state can be derived centrally.
-
-### UX rules
-
-- No blocking popups.
-- No notification spam.
-- Signals must be concise and semantically consistent.
-- Only meaningful/actionable states deserve attention treatment.
-- Visual priority must distinguish urgency from simple informational state.
-
-### Definition of done
-
-- Shared attention model exists.
-- At least the highest-value existing actionable states are represented.
-- Dashboard and navigation consume the same source of truth.
-- Signals disappear correctly when the underlying actionable state is resolved.
-- Save persistence is added only when actually necessary; do not persist derived state unnecessarily.
-
----
-
-## P0.2 — Interaction Contract / Global Interaction Grammar
-
-### Goal
-
-Make common interactions predictable everywhere.
-
-Validated target grammar:
-
-- **Click** -> select / inspect.
-- **Double-click** -> primary/default action.
-- **Right-click** -> contextual actions.
-- **Drag & drop** -> move / organize when the concept supports spatial movement.
-- **Hover** -> information only.
-
-This is a UX contract, not a requirement to force interactions where they make no sense.
-
-### Work
-
-Audit all major interactive modules and identify exceptions/inconsistencies.
-
-Priority modules:
-
-- Inventory
-- Bank
-- Character / equipment picker
-- Merchant
-- Masteries
-- Island
-- Production modules
-- World
-
-Do not add duplicate action paths merely to satisfy the contract. Reuse existing authoritative actions.
-
-### Definition of done
-
-- Major modules follow the same interaction language where applicable.
-- Contextual actions are discoverable.
-- Disabled interactions explain why when relevant.
-- Helper text can eventually be reduced because behavior becomes predictable.
-
----
-
-## P1.1 — Dashboard: from summary to cockpit
-
-### Current strengths
-
-The Dashboard already:
-
-- aggregates multiple systems;
-- uses modular cards;
-- supports section reordering;
-- persists the player's section order.
-
-Do not replace this architecture.
-
-### Goal
-
-Rework hierarchy so the Dashboard primarily answers:
-
-> **What can/should I do now?**
-
-rather than only:
-
-> What is currently happening?
-
-### Target information hierarchy
-
-1. **Action required / actionable now**
-2. **Current activity**
-3. **Passive information / yield**
-
-Possible existing card groups include combat, research, yield, enchant-ready and production; preserve the data-driven/current component approach.
-
-### Definition of done
-
-- Actionable states are visually dominant without becoming noisy.
-- Passive statistics remain accessible but secondary.
-- Attention System P0.1 feeds Dashboard rather than duplicating state detection.
-- Player section reordering remains functional unless explicitly revalidated.
-
----
-
-## P1.2 — Standardize internal module hierarchy
-
-### Goal
-
-Avoid each module gradually becoming its own visual language.
-
-Create/reinforce a shared module composition contract using existing primitives wherever possible.
-
-Target pattern:
-
-1. **Module Header**
-2. **Primary status / summary**
-3. **Toolbar / local tabs / filters** when needed
-4. **Main body**
-5. **Optional contextual footer / primary CTA**
-
-Shared concepts should reuse shared components for:
-
-- tabs;
-- filters;
-- progress bars;
-- requirement rows;
-- empty states;
-- primary/secondary/disabled actions;
-- badges/statuses;
-- section headings.
-
-### Definition of done
-
-- Major modules feel related without becoming visually identical.
-- No screen-specific reimplementation of existing primitives.
-- Spacing, headings, action hierarchy and disabled states are predictable.
-
----
-
-## P1.3 — Dedicated Combat HUD readability audit
-
-### Goal
-
-Perform a focused audit before changing the Combat HUD.
-
-Do **not** change combat gameplay as part of this UI task unless a separate game-design decision is validated.
-
-Audit readability of existing information such as:
+Audit at minimum:
 
 - player HP;
 - enemy HP;
-- current stage/block progression;
-- boss/reinforced/trial state when applicable;
+- stage/block progression;
+- boss/reinforced/trial state where applicable;
 - 3 active skills;
 - healing potion;
 - cooldown readability;
 - buffs/debuffs/status effects;
 - reward/yield information;
-- distinction between progression and farming states.
+- distinction between progression and farming states;
+- overlap/density against the World First principle.
 
-The core question:
+Core question:
 
 > Can the player understand combat state and progression at a glance without pulling attention away from the world?
 
-### Definition of done
+### Required first deliverable
 
-First produce findings and proposed changes. Do not blindly restyle the HUD.
+Findings + ranked proposals only. Implementation comes after explicit validation of the proposed HUD changes.
 
-Any implementation must preserve:
+Must preserve:
 
 - World First principle;
-- 3 active skills + heal consumable contract;
+- 3 active skills + heal consumable;
 - no mana/energy system;
 - persistent combat visibility.
 
 ---
 
-## P2.1 — Inventory / Bank / Equipment remaining polish
+# 6. REMAINING ROADMAP AFTER P1.3
 
-This area is already close to target.
+## P2.1 — Inventory / Bank / Equipment targeted polish
 
-Do **not** launch another redesign.
+Already close to target. No redesign.
 
-Only consider evidence-based polish such as:
-
-- search if item volume genuinely warrants it;
-- improved sorting/filtering only if current workflows become painful;
-- better empty states;
-- small clarity/accessibility fixes.
-
-Any change must preserve the recently validated interaction/storage work documented in section 3.
-
----
+Only evidence-based improvements, e.g. search/sorting/filter clarity/empty states/accessibility if real usage proves a need.
 
 ## P2.2 — Tooltip system final polish
 
-### Existing validated direction
+Candidate only, not validated yet:
 
-The shared tooltip system should remain the single source of item tooltip presentation.
-
-### Candidate polish
-
-Test a small hover-intent delay (roughly 100-150 ms range) to reduce tooltip flicker when the cursor crosses dense inventories.
-
-This value is **not yet validated** and must be tested in game before locking it.
-
-Also audit:
-
-- disabled-action explanations;
-- stat explanations;
-- consistency across Inventory / Bank / Character / Merchant / Craft / Loot;
-- tooltip concision.
-
-The UI Bible rule remains: essential information must not exist only inside a tooltip.
-
----
+- test hover-intent delay around 100–150 ms;
+- audit disabled-action explanations;
+- audit stat explanations;
+- verify consistency across Inventory / Bank / Character / Merchant / Craft / Loot;
+- keep essential information outside tooltip-only presentation.
 
 ## P2.3 — Navigation as state map
 
-Do not add more primary navigation buttons without a strong reason.
-
-Current primary modules are intentionally limited:
-
-- Character
-- Inventory
-- Masteries
-- Island
-- Merchant
-- World
-
-Use the Attention System to make navigation communicate state through concise badges/markers.
-
-Examples are conceptual only:
-
-- Inventory warning;
-- Island actionable marker;
-- Merchant/enchantment action;
-- progression-related module attention.
-
-Avoid unreadable counters everywhere.
-
----
+Attention System already provides the foundation. Audit whether remaining navigation state communication needs polish without adding more primary navigation buttons or noisy counters.
 
 ## P3.1 — Masteries / Production cognitive-density pass
 
-### Goal
+Use progressive disclosure. Reduce permanent information density; do not create spreadsheet walls.
 
-Reduce permanent information density rather than add more panels/data.
-
-Use progressive disclosure:
-
-Always visible:
-
-- current level/state;
-- current progress;
-- immediately useful bonus/action.
-
-On demand:
-
-- detailed formulas;
-- breakdowns;
-- secondary bonus provenance;
-- advanced explanations.
-
-Do not turn endgame systems into permanently visible spreadsheet tables unless the data is required for the player's immediate decision.
-
----
-
-## P3.2 — PC responsive / smaller-resolution pass
-
-Albion Idle is PC-focused, but the shell must remain usable on smaller desktop/laptop resolutions.
+## P3.2 — PC smaller-resolution / responsive pass
 
 Audit at least:
 
@@ -424,48 +267,20 @@ Audit at least:
 - Combat HUD overlap;
 - header density.
 
-Prefer adapting shared tokens/layout rules over adding module-specific media-query patches.
-
----
+Prefer shared tokens/layout rules over module-specific media-query accumulation.
 
 ## P4 — General visual redesign
 
-**Not recommended at this stage.**
-
-Only revisit if a later usability/visual audit identifies a systemic failure that cannot be solved through the roadmap above.
-
-Do not spend large effort repainting the game while hierarchy, attention and interaction consistency still provide higher UX value.
+Still **not recommended** unless later evidence demonstrates a systemic visual/usability failure that the targeted roadmap cannot solve.
 
 ---
 
-# 6. Explicitly rejected directions for now
+# 7. EXECUTION ORDER FROM HERE
 
-Unless the user explicitly revalidates them, do not introduce:
-
-- full-screen Inventory / Character / Masteries pages;
-- replacement of the global shell;
-- second global sidebar navigation;
-- excessive floating/modal windows;
-- duplicated screen-specific tooltip systems;
-- permanent walls of advanced stats;
-- notification spam;
-- UI-specific gameplay state duplicated outside authoritative runtime/domain data;
-- cosmetic redesign before higher-priority UX work.
-
----
-
-# 7. Recommended execution order
-
-Follow this sequence unless a blocking bug changes priorities:
-
-1. **P0.1 Attention System**
-2. **P0.2 Interaction Contract audit + fixes**
-3. **P1.1 Dashboard hierarchy**
-4. **P1.2 Module hierarchy normalization**
-5. **P1.3 Combat HUD dedicated audit**
-6. **P2 targeted polish**
-7. **P3 density + smaller-resolution pass**
-8. **P4 only if later evidence justifies it**
+1. **P1.3 Combat HUD audit**
+2. **P2 targeted polish**
+3. **P3 density + smaller-resolution pass**
+4. **P4 only if evidence later justifies it**
 
 Do not start multiple large UI architecture changes in parallel.
 
@@ -477,35 +292,26 @@ Before implementation:
 
 1. Read `AGENTS.md`.
 2. Read the relevant UI Bible files.
-3. Inspect the current branch, because this handoff baseline SHA may be outdated when resumed.
-4. Reuse existing components/runtime data before creating new abstractions.
-5. Keep the solution data-driven where appropriate.
-6. Do not alter gameplay rules under the guise of UI work.
-7. For each major phase: implementation -> targeted tests -> lint -> typecheck -> end-to-end UI review.
-8. Challenge proposed changes that conflict with World First, readability, progressive disclosure or existing architecture.
+3. Inspect the current branch/HEAD; this document can become stale.
+4. Reuse existing components/runtime data before creating abstractions.
+5. Keep solutions data-driven where appropriate.
+6. Do not alter gameplay rules under UI work without separate validation.
+7. Per major phase: audit -> proposal -> validation when needed -> implementation -> targeted tests -> lint -> typecheck -> E2E UI review.
+8. Challenge changes that conflict with World First, readability, progressive disclosure or current architecture.
 
 ---
 
-# 9. First task when resuming
+# 9. Validation status
 
-Start with **P0.1 Global Attention System**.
+Roadmap ordering was explicitly validated on 2026-09-01.
 
-Before coding, audit existing sources for actionable states and existing notification/badge infrastructure.
+Validated completed phases:
 
-Expected first deliverable:
+- **P0.1 Global Attention System**
+- **P0.2 Interaction Contract**
+- **P1.1 Dashboard cockpit**
+- **P1.2 Internal module hierarchy**
 
-- inventory of existing actionable states;
-- which are derived vs persisted;
-- where each state currently appears (Dashboard / module / notification / nowhere);
-- proposed shared attention model;
-- exact first implementation slice with minimal architecture impact.
+Current resume point:
 
-Do not begin by creating badges directly inside every module.
-
----
-
-# 10. Validation status
-
-This roadmap and ordering were explicitly validated by the user on 2026-09-01.
-
-The roadmap itself is the approved direction. Individual implementation details inside each phase still require normal audit and should be challenged when the existing project architecture indicates a better solution.
+> **P1.3 — Dedicated Combat HUD readability audit**
