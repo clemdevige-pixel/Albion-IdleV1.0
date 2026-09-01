@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import type { EnchantmentLevel } from "@game/gameplay";
 import { getFragmentAssemblyRecipe } from "../data/specialCraftRecipes.js";
@@ -23,6 +23,7 @@ const TOOLTIP_WIDTH = 330;
 const TOOLTIP_HEIGHT = 390;
 const TOOLTIP_GAP = 12;
 const VIEWPORT_PADDING = 8;
+const TOOLTIP_HOVER_DELAY_MS = 120;
 const TOOLTIP_AVOIDANCE_SELECTOR = ".ui-item-grid, .character-picker, .character-module__slots";
 
 function clamp(value: number, minimum: number, maximum: number): number {
@@ -83,20 +84,37 @@ export function ItemHoverTooltip({
 }: ItemHoverTooltipProps): JSX.Element {
   const [position, setPosition] = useState<TooltipPosition | null>(null);
   const [suppressedUntilLeave, setSuppressedUntilLeave] = useState(false);
+  const hoverTimerRef = useRef<number | null>(null);
   const assemblyRecipe = getFragmentAssemblyRecipe(itemId);
   const requiredFragments = assemblyRecipe?.requirements[0]?.quantity;
+
+  const clearHoverTimer = (): void => {
+    if (hoverTimerRef.current === null) return;
+    window.clearTimeout(hoverTimerRef.current);
+    hoverTimerRef.current = null;
+  };
+
+  useEffect(() => clearHoverTimer, []);
 
   return (
     <span
       className="item-hover-target"
       onMouseEnter={(event) => {
-        if (!suppressedUntilLeave) setPosition(resolveTooltipPosition(event.currentTarget));
+        if (suppressedUntilLeave) return;
+        const target = event.currentTarget;
+        clearHoverTimer();
+        hoverTimerRef.current = window.setTimeout(() => {
+          hoverTimerRef.current = null;
+          setPosition(resolveTooltipPosition(target));
+        }, TOOLTIP_HOVER_DELAY_MS);
       }}
       onMouseLeave={() => {
+        clearHoverTimer();
         setPosition(null);
         setSuppressedUntilLeave(false);
       }}
       onContextMenu={() => {
+        clearHoverTimer();
         setPosition(null);
         setSuppressedUntilLeave(true);
       }}
