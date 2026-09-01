@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import type { InventorySlotVM } from "../../../game/GameBridge";
 import { getItemTier } from "../../../data/itemPower";
@@ -26,8 +27,25 @@ interface CharacterEquipmentPickerProps {
 }
 
 export function CharacterEquipmentPicker({ label, candidates, x, y, onClose, onEquip }: CharacterEquipmentPickerProps): JSX.Element {
+  const ref = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const handlePointerDown = (event: MouseEvent): void => {
+      if (ref.current !== null && !ref.current.contains(event.target as Node)) onClose();
+    };
+    const handleKeyDown = (event: KeyboardEvent): void => {
+      if (event.key === "Escape") onClose();
+    };
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [onClose]);
+
   return createPortal(
-    <section className="character-picker" aria-label={`Sélection ${label}`} style={{ position: "fixed", left: `${String(Math.max(8, Math.min(x + 12, window.innerWidth - 330)))}px`, top: `${String(Math.max(8, Math.min(y + 12, window.innerHeight - 390)))}px`, width: "min(320px, calc(100vw - 16px))", maxHeight: "min(380px, calc(100vh - 16px))", overflowY: "auto", zIndex: 1000 }}>
+    <section ref={ref} className="character-picker" aria-label={`Sélection ${label}`} style={{ position: "fixed", left: `${String(Math.max(8, Math.min(x + 12, window.innerWidth - 330)))}px`, top: `${String(Math.max(8, Math.min(y + 12, window.innerHeight - 390)))}px`, width: "min(320px, calc(100vw - 16px))", maxHeight: "min(380px, calc(100vh - 16px))", overflowY: "auto", zIndex: 1000 }}>
       <header className="character-picker__header">
         <div><small>Équipement compatible</small><strong>{label}</strong></div>
         <button type="button" onClick={onClose} aria-label="Fermer la sélection">×</button>
