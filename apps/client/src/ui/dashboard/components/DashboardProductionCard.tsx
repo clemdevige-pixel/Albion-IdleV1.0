@@ -23,6 +23,7 @@ interface DashboardProductionCardProps {
 const KIND_LABELS = {
   gathering: "Récolte",
   refining: "Raffinage",
+  worker: "Worker",
 } as const;
 
 const RESOURCE_ICONS = Object.values(PRODUCTION_FAMILY_CATALOG).map((family) => ({
