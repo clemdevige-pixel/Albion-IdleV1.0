@@ -1,5 +1,6 @@
-import { describe, expect, it } from "vitest";
-import { resolveDungeonAccessState } from "./DungeonNavigationActions.js";
+import { describe, expect, it, vi } from "vitest";
+import type { CombatLoopState } from "../runtime/CombatRuntime.js";
+import { DungeonNavigationActions, resolveDungeonAccessState } from "./DungeonNavigationActions.js";
 
 const AVAILABLE_FACTS = {
   definitionTier: 4,
@@ -9,6 +10,47 @@ const AVAILABLE_FACTS = {
   highestEquippedTier: 4,
   hasKey: true,
 } as const;
+
+function createNavigationHarness(loopState: CombatLoopState = "combat") {
+  let paused = false;
+  const dungeonRuntime = {
+    activeRun: { status: "active" },
+    abandon: vi.fn(),
+    getClearedTiers: vi.fn(() => []),
+  };
+  const combatRuntime = {
+    getLoopState: vi.fn((): CombatLoopState => loopState),
+    interruptEncounter: vi.fn(),
+  };
+  const stopController = {
+    isPaused: vi.fn(() => paused),
+    requestStopAfterEncounter: vi.fn(() => true),
+    reset: vi.fn(),
+  };
+  const onStateChanged = vi.fn();
+  const actions = new DungeonNavigationActions({
+    dungeonRuntime: dungeonRuntime as never,
+    inventoryManager: {} as never,
+    equipmentManager: {} as never,
+    heroId: "hero" as never,
+    combatRuntime,
+    stopController,
+    bridge: {} as never,
+    isCombatSuspended: () => false,
+    canStartDungeon: () => true,
+    canAccessDungeonContent: () => true,
+    onStateChanged,
+  });
+
+  return {
+    actions,
+    dungeonRuntime,
+    combatRuntime,
+    stopController,
+    onStateChanged,
+    reachPausedState: () => { paused = true; },
+  };
+}
 
 describe("resolveDungeonAccessState", () => {
   it("uses the shared access priority for Research, progression, equipment, weapon and key gates", () => {
@@ -50,5 +92,36 @@ describe("resolveDungeonAccessState", () => {
       canEnter: false,
       reason: "invalid_definition",
     });
+  });
+});
+
+describe("DungeonNavigationActions combat priority", () => {
+  it("defers dungeon abandon until the current encounter reaches the stable paused state", () => {
+    const harness = createNavigationHarness("combat");
+
+    expect(harness.actions.abandon()).toBe(true);
+    expect(harness.stopController.requestStopAfterEncounter).toHaveBeenCalledOnce();
+    expect(harness.dungeonRuntime.abandon).not.toHaveBeenCalled();
+    expect(harness.combatRuntime.interruptEncounter).not.toHaveBeenCalled();
+    expect(harness.onStateChanged).toHaveBeenCalledOnce();
+
+    expect(harness.actions.flushPendingStart()).toBe(false);
+    expect(harness.dungeonRuntime.abandon).not.toHaveBeenCalled();
+    expect(harness.combatRuntime.interruptEncounter).not.toHaveBeenCalled();
+
+    harness.reachPausedState();
+    expect(harness.actions.flushPendingStart()).toBe(true);
+    expect(harness.dungeonRuntime.abandon).toHaveBeenCalledOnce();
+    expect(harness.combatRuntime.interruptEncounter).toHaveBeenCalledOnce();
+    expect(harness.stopController.reset).toHaveBeenCalledOnce();
+  });
+
+  it("does not request a second stop when combat is already stopping", () => {
+    const harness = createNavigationHarness("stop_requested");
+
+    expect(harness.actions.abandon()).toBe(true);
+    expect(harness.stopController.requestStopAfterEncounter).not.toHaveBeenCalled();
+    expect(harness.dungeonRuntime.abandon).not.toHaveBeenCalled();
+    expect(harness.combatRuntime.interruptEncounter).not.toHaveBeenCalled();
   });
 });
