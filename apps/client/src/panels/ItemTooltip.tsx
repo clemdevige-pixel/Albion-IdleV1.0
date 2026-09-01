@@ -286,7 +286,7 @@ export function ItemTooltip({
                   <span>{STAT_LABELS[statId] ?? statId}</span>
                   <strong>
                     +{formatStatValue(effectiveValue)}
-                    {ipBonus > 0 && <small>(+{formatStatValue(ipBonus)} via IP/2M)</small>}
+                    {ipBonus > 0 && <small>(dont +{formatStatValue(ipBonus)} via améliorations)</small>}
                   </strong>
                   {showDelta && (
                     <em className={delta >= 0 ? "is-positive" : "is-negative"}>
