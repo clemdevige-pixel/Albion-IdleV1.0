@@ -28,26 +28,36 @@ interface WorldZoneContentDefinition {
   readonly tags: readonly string[];
 }
 
-export const WORLD_ZONE_CONTENT = Object.fromEntries(
-  Object.entries(AUTHORED_WORLD_ZONE_CONTENT).map(([key, definition]) => [
-    key,
-    {
-      ...definition,
-      id: asZoneDefinitionId(definition.id),
-      biomeId: asBiomeId(definition.biomeId),
-    },
-  ]),
-) as {
-  readonly [K in keyof typeof AUTHORED_WORLD_ZONE_CONTENT]: WorldZoneContentDefinition & {
-    readonly id: ZoneDefinitionId;
-    readonly biomeId: BiomeId;
-  };
-};
+function mapRecordValues<
+  const T extends Readonly<Record<string, unknown>>,
+  R,
+>(
+  source: T,
+  mapValue: (value: T[keyof T]) => R,
+): { readonly [K in keyof T]: R } {
+  const result = {} as { [K in keyof T]: R };
+  for (const key in source) {
+    if (Object.prototype.hasOwnProperty.call(source, key)) {
+      result[key] = mapValue(source[key]);
+    }
+  }
+  return result;
+}
+
+export const WORLD_ZONE_CONTENT = mapRecordValues(
+  AUTHORED_WORLD_ZONE_CONTENT,
+  (definition): WorldZoneContentDefinition => ({
+    ...definition,
+    id: asZoneDefinitionId(definition.id),
+    biomeId: asBiomeId(definition.biomeId),
+  }),
+);
 
 export type WorldZoneKey = keyof typeof WORLD_ZONE_CONTENT;
-export const WORLD_ZONE_IDS = Object.fromEntries(
-  Object.entries(WORLD_ZONE_CONTENT).map(([key, definition]) => [key, definition.id]),
-) as { readonly [K in WorldZoneKey]: (typeof WORLD_ZONE_CONTENT)[K]["id"] };
+export const WORLD_ZONE_IDS = mapRecordValues(
+  WORLD_ZONE_CONTENT,
+  (definition) => definition.id,
+);
 const ZONE_CONTENT_VALUES: readonly WorldZoneContentDefinition[] = Object.values(WORLD_ZONE_CONTENT);
 export const WORLD_ZONE_IDS_BY_BAND = Object.fromEntries(
   WORLD_BAND_DEFINITIONS.map(({ id }) => [
