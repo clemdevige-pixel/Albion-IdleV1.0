@@ -100,3 +100,4 @@ export * from "./config/weapon-content.js";
 export * from "./config/faction-artifact-weapon-content.js";
 export * from "./config/monster-ability-content.js";
 export * from "./config/monster-content.js";
+export * from "./config/non-weapon-equipment-content.js";
