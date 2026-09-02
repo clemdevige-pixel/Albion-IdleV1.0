@@ -2,6 +2,7 @@ import {
   ABYSSAL_LEATHER_RECIPE,
   ASHEN_PLANK_RECIPE,
   AUTHORED_REFINING_RECIPES,
+  BADON_TEMPORARY_RECIPE,
   BIRCH_PLANK_RECIPE,
   BLOODOAK_PLANK_RECIPE,
   CEDAR_PLANK_RECIPE,
@@ -44,6 +45,7 @@ import type { ProductionFamilyId } from "./productionFamilyCatalog.js";
 export {
   ABYSSAL_LEATHER_RECIPE,
   ASHEN_PLANK_RECIPE,
+  BADON_TEMPORARY_RECIPE,
   BIRCH_PLANK_RECIPE,
   BLOODOAK_PLANK_RECIPE,
   CEDAR_PLANK_RECIPE,
@@ -169,20 +171,6 @@ export const REINFORCED_SHIELD_RECIPE = STANDARD_NON_WEAPON_CRAFT_RECIPES.find(
 if (REINFORCED_SHIELD_RECIPE === undefined) {
   throw new Error("Missing T3 reinforced shield recipe");
 }
-
-export const BADON_TEMPORARY_RECIPE = {
-  id: "CRAFT_BADON_T4_0",
-  family: "bow",
-  name: "Badon T4",
-  tier: 4,
-  outputItemId: "item_weapon_bow_t4_badon",
-  durationTicks: 0,
-  requirements: [
-    { itemId: PINE_PLANK_RECIPE.outputItemId, quantity: 8 },
-    { itemId: THICK_LEATHER_RECIPE.outputItemId, quantity: 4 },
-    { itemId: FINE_CLOTH_RECIPE.outputItemId, quantity: 2 },
-  ],
-} as const;
 
 export const EQUIPMENT_CRAFT_RECIPES = [
   ...STANDARD_NON_WEAPON_CRAFT_RECIPES,
