@@ -64,5 +64,5 @@ Run `validate:data` / `validate:assets` as well when those contracts are affecte
 - P0 infrastructure audit fixes: CLOSED.
 - P1 authored-data ownership cleanup: CLOSED and validated green on 2026-08-25.
 - P3 persistence / cloud backend for current beta scope: CLOSED; Render API and PostgreSQL/Supabase persistence are integrated, with local fallback and account-save migration safeguards.
-- P6 architecture/quality guardrails: IN PROGRESS pending final green validation; shared-package and client/server cross-app boundaries are now executable guards through `pnpm lint`.
+- P6 architecture/quality guardrails: CLOSED and validated green on 2026-09-02.
 - P2 broader server-authority migration remains deferred; do not move gameplay authority server-side as a big-bang rewrite.
