@@ -1,3 +1,8 @@
+import {
+  CONSUMABLE_STACK_LIMITS,
+  ITEM_STACK_LIMITS,
+  STANDALONE_NON_WEAPON_ITEM_DEFINITIONS,
+} from "@game/data";
 import { ENCHANTMENT_MINIMUM_ITEM_TIER, type EquipmentInfoLike } from "@game/gameplay";
 import { WEAPON_ITEM_DEFINITIONS } from "./weaponContentCatalog.js";
 import {
@@ -8,13 +13,7 @@ import {
   FACTION_CAPE_ITEM_DEFINITIONS,
 } from "./factionCapeContentCatalog.js";
 import { getWeaponAttackSpeed, getItemTier } from "./itemPower.js";
-import {
-  EQUIPMENT_CRAFT_RECIPES,
-  BIRCH_PLANK_RECIPE,
-  COPPER_BAR_RECIPE,
-  PINE_PLANK_RECIPE,
-  IRON_BAR_RECIPE,
-} from "./refiningRecipes.js";
+import { EQUIPMENT_CRAFT_RECIPES } from "./refiningRecipes.js";
 import {
   ARTIFACT_WEAPON_CRAFT_RECIPES,
   isArtifactWeaponCraftOutput,
@@ -34,39 +33,25 @@ const ALL_EQUIPMENT_CRAFT_RECIPES = [
  * derived from nonWeaponEquipmentContentCatalog; standalone/specialized
  * equipment is composed from its own authoritative catalogs.
  */
-export const NON_WEAPON_ITEM_DEFINITIONS: Readonly<
-  Record<string, EquipmentInfoLike>
-> = {
+export const NON_WEAPON_ITEM_DEFINITIONS: Readonly<Record<string, EquipmentInfoLike>> = {
   ...PROGRESSION_NON_WEAPON_ITEM_DEFINITIONS,
   ...FACTION_CAPE_ITEM_DEFINITIONS,
-  item_wooden_shield: {
-    itemId: "item_wooden_shield",
-    slot: "off_hand",
-    handling: "one_handed",
-    stats: { stat_armor: 5, stat_magic_resistance: 3 },
-  },
-  item_traveler_cape: {
-    itemId: "item_traveler_cape",
-    slot: "cape",
-    handling: "one_handed",
-    stats: { stat_magic_resistance: 4 },
-  },
+  ...STANDALONE_NON_WEAPON_ITEM_DEFINITIONS,
 };
 
-export const CONSUMABLE_STACK_DEFINITIONS: Readonly<Record<string, number>> = {
-  item_health_potion: 99,
-};
+export const CONSUMABLE_STACK_DEFINITIONS: Readonly<Record<string, number>> =
+  CONSUMABLE_STACK_LIMITS;
 
 export function resolveCatalogStackInfo(itemId: string) {
   if (NON_WEAPON_ITEM_DEFINITIONS[itemId] !== undefined) {
-    return { itemId, stackable: true, maxStack: 20 };
+    return { itemId, stackable: true, maxStack: ITEM_STACK_LIMITS.equipment };
   }
   const consumableMaxStack = CONSUMABLE_STACK_DEFINITIONS[itemId];
   if (consumableMaxStack !== undefined) {
     return { itemId, stackable: true, maxStack: consumableMaxStack };
   }
   if (itemId.startsWith("item_resource_") || itemId.startsWith("item_refined_")) {
-    return { itemId, stackable: true, maxStack: 999 };
+    return { itemId, stackable: true, maxStack: ITEM_STACK_LIMITS.resource };
   }
   return undefined;
 }
@@ -152,25 +137,7 @@ export function resolveItemStackInfo(itemId: string) {
   const catalogStackInfo = resolveCatalogStackInfo(itemId);
   if (catalogStackInfo !== undefined) return catalogStackInfo;
   if (ITEM_DEFINITIONS[itemId] !== undefined) {
-    return { itemId, stackable: true, maxStack: 20 };
-  }
-  if (itemId === "item_health_potion") {
-    return { itemId, stackable: true, maxStack: 99 };
-  }
-  if (itemId.startsWith("item_resource_") || itemId.startsWith("item_refined_")) {
-    return { itemId, stackable: true, maxStack: 999 };
-  }
-  if (
-    itemId === BIRCH_PLANK_RECIPE.rawItemId ||
-    itemId === BIRCH_PLANK_RECIPE.outputItemId ||
-    itemId === COPPER_BAR_RECIPE.rawItemId ||
-    itemId === COPPER_BAR_RECIPE.outputItemId ||
-    itemId === PINE_PLANK_RECIPE.rawItemId ||
-    itemId === PINE_PLANK_RECIPE.outputItemId ||
-    itemId === IRON_BAR_RECIPE.rawItemId ||
-    itemId === IRON_BAR_RECIPE.outputItemId
-  ) {
-    return { itemId, stackable: true, maxStack: 999 };
+    return { itemId, stackable: true, maxStack: ITEM_STACK_LIMITS.equipment };
   }
   return undefined;
 }
