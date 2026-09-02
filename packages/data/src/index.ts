@@ -59,6 +59,7 @@ export * from "./config/combat-automation-balance.js";
 export * from "./config/world-combat-reward-balance.js";
 export * from "./config/world-bands.js";
 export * from "./config/world-progression-contract.js";
+export * from "./config/world-content.js";
 export * from "./config/item-power-balance.js";
 export * from "./config/enchantment-balance.js";
 export * from "./config/enchantment-recipe-balance.js";
